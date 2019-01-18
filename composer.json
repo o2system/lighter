@@ -1,0 +1,40 @@
+{
+  "name": "o2system/lighter",
+  "description": "O2System Light Framework",
+  "type": "package",
+  "license": "MIT",
+  "keywords": [
+    "singleton",
+    "php",
+    "framework",
+    "driver",
+    "libraries"
+  ],
+  "authors": [
+    {
+      "name": "Steeven Andrian Salim",
+      "email": "steevenz@steevenz.com",
+      "homepage": "http://www.steevenz.com"
+    }
+  ],
+  "support": {
+    "email": "support@o2system.id",
+    "issues": "https://github.com/o2system/lighter/issues",
+    "forum": "https://www.facebook.com/groups/498147006994512"
+  },
+  "links": {
+    "info": "http://www.o2system.id/",
+    "documentation": "http://www.o2system.id/libraries/core/documentation.html",
+    "github-wiki": "http://github.com/o2system/core/wiki"
+  },
+  "require": {
+    "php": ">=7.2.0",
+    "o2system/kernel": "*",
+    "react/http": "*"
+  },
+  "autoload": {
+    "psr-4": {
+      "O2System\\Lighter\\": "src"
+    }
+  }
+}
