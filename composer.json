@@ -1,13 +1,15 @@
 {
-  "name": "o2system/lighter",
-  "description": "O2System Light Framework",
-  "type": "package",
+
+  "name": "o2system/reactor",
+  "description": "O2System Mini Reactor",
   "license": "MIT",
+  "type": "package",
   "keywords": [
-    "singleton",
+    "utilities",
     "php",
     "framework",
-    "driver",
+    "mini framework",
+    "microservices",
     "libraries"
   ],
   "authors": [
@@ -19,22 +21,25 @@
   ],
   "support": {
     "email": "support@o2system.id",
-    "issues": "https://github.com/o2system/lighter/issues",
+    "issues": "https://github.com/o2system/framework/issues",
     "forum": "https://www.facebook.com/groups/498147006994512"
   },
-  "links": {
-    "info": "http://www.o2system.id/",
-    "documentation": "http://www.o2system.id/libraries/core/documentation.html",
-    "github-wiki": "http://github.com/o2system/core/wiki"
-  },
   "require": {
-    "php": ">=7.2.0",
+    "php": "~7.2.0",
     "o2system/kernel": "*",
-    "react/http": "*"
+    "o2system/filesystem": "*",
+    "o2system/cache": "*",
+    "o2system/database": "*",
+    "o2system/security": "*",
+    "o2system/curl": "*",
+    "o2system/email": "*",
   },
   "autoload": {
     "psr-4": {
-      "O2System\\Lighter\\": "src"
-    }
+      "O2System\\Reactor\\": "src"
+    },
+    "files": [
+      "src/Reactor.php"
+    ]
   }
 }
