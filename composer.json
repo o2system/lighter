@@ -32,7 +32,7 @@
     "o2system/database": "*",
     "o2system/security": "*",
     "o2system/curl": "*",
-    "o2system/email": "*",
+    "o2system/email": "*"
   },
   "autoload": {
     "psr-4": {
