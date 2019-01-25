@@ -26,6 +26,35 @@ use O2System\Spl\Datastructures\SplArrayObject;
 class Config extends Environment
 {
     /**
+     * Config::__construct
+     */
+    public function __construct()
+    {
+        if (is_file(
+            $filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . ucfirst(
+                    strtolower(ENVIRONMENT)
+                ) . DIRECTORY_SEPARATOR . 'Config.php'
+        )) {
+            include($filePath);
+        } elseif (is_file($filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . 'Config.php')) {
+            include($filePath);
+        }
+
+        if (isset($config) AND is_array($config)) {
+            // Set default timezone
+            if (isset($config['datetime']['timezone'])) {
+                date_default_timezone_set($config['datetime']['timezone']);
+            }
+
+            $this->merge($config);
+
+            unset($config);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
      * Config::loadFile
      *
      * @param string $offset
@@ -42,13 +71,9 @@ class Config extends Environment
         $offset = camelcase($basename);
 
         $configDirs = [
-            PATH_FRAMEWORK . 'Config' . DIRECTORY_SEPARATOR,
+            PATH_REACTOR . 'Config' . DIRECTORY_SEPARATOR,
             PATH_APP . 'Config' . DIRECTORY_SEPARATOR,
         ];
-
-        if (method_exists(modules(), 'getDirs')) {
-            $configDirs = modules()->getDirs('Config', true);
-        }
 
         foreach ($configDirs as $configDir) {
             if (is_file(

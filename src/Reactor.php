@@ -61,8 +61,8 @@ if ( ! defined('PATH_VENDOR')) {
  *
  * WITH TRAILING SLASH!
  */
-if ( ! defined('PATH_FRAMEWORK')) {
-    define('PATH_FRAMEWORK', __DIR__ . DIRECTORY_SEPARATOR);
+if ( ! defined('PATH_REACTOR')) {
+    define('PATH_REACTOR', __DIR__ . DIRECTORY_SEPARATOR);
 }
 
 /*
@@ -186,6 +186,8 @@ class Reactor extends Kernel
         }
 
         $services = [
+            'Containers\Globals' => 'globals',
+            'Containers\Environment' => 'environment',
             'Services\Loader' => 'loader',
             'Services\Config' => 'config'
         ];
@@ -301,14 +303,6 @@ class Reactor extends Kernel
         if (false !== ($controller = $this->services->get('controller'))) {
             if ($controller instanceof Kernel\Http\Router\Datastructures\Controller) {
                 // Autoload Model
-                foreach ($this->modules as $module) {
-                    if (in_array($module->getType(), ['KERNEL', 'FRAMEWORK'])) {
-                        continue;
-                    }
-                    $module->loadModel();
-                }
-
-                // Autoload Model
                 $modelClassName = str_replace('Controllers', 'Models', $controller->getName());
 
                 if (class_exists($modelClassName)) {
@@ -336,7 +330,6 @@ class Reactor extends Kernel
                 if (profiler() !== false) {
                     profiler()->watch('Calling Middleware Service: Post Controller');
                 }
-                hooks()->callEvent(Reactor\Services\Hooks::POST_CONTROLLER);
 
                 $requestMethod = $controller->getRequestMethod();
                 $requestMethodArgs = $controller->getRequestMethodArgs();

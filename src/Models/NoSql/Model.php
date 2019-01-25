@@ -78,13 +78,13 @@ class Model
     /**
      * Model Result
      *
-     * @var \O2System\Reactor\Models\Sql\DataObjects\Result
+     * @var \O2System\Framework\Models\Sql\DataObjects\Result
      */
     public $result;
     /**
      * Model Result Row
      *
-     * @var \O2System\Reactor\Models\Sql\DataObjects\Result\Row
+     * @var \O2System\Framework\Models\Sql\DataObjects\Result\Row
      */
     public $row;
     /**
@@ -185,8 +185,8 @@ class Model
     {
         $get[ $property ] = false;
 
-        if (o2system()->hasService($property)) {
-            $get[ $property ] = o2system()->getService($property);
+        if (services()->has($property)) {
+            $get[ $property ] = services()->get($property);
         } elseif (array_key_exists($property, $this->validSubModels)) {
             $get[ $property ] = $this->loadSubModel($property);
         } elseif (o2system()->__isset($property)) {

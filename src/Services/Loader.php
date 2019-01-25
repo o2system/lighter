@@ -15,8 +15,8 @@ namespace O2System\Reactor\Services;
 
 // ------------------------------------------------------------------------
 
-use O2System\Reactor\Datastructures\Module;
 use O2System\Psr\Loader\AutoloadInterface;
+use O2System\Reactor\Datastructures\Module;
 
 /**
  * O2System Loader
@@ -79,8 +79,8 @@ class Loader implements AutoloadInterface
         // Add Kernel Namespace
         $this->addNamespace('O2System\Kernel', PATH_KERNEL);
 
-        if (class_exists('O2System', false)) {
-            $this->addNamespace('O2System\Reactor', PATH_FRAMEWORK);
+        if (defined('PATH_REACTOR')) {
+            $this->addNamespace('O2System\Reactor', PATH_REACTOR);
         }
     }
 
@@ -95,9 +95,6 @@ class Loader implements AutoloadInterface
     {
         // Prepend the PSR4 autoloader for maximum performance.
         spl_autoload_register([&$this, 'loadClass'], true, true);
-
-        // Append the custom modular PSR4 autoloader.
-        spl_autoload_register([&$this, 'loadModuleClass'], true, false);
     }
 
     // ------------------------------------------------------------------------
@@ -150,57 +147,11 @@ class Loader implements AutoloadInterface
             // Register Namespace Output FilePath
             output()->addFilePath($baseDirectory);
 
-            // Register Namespace Views FilePath
-            if (o2system()->hasService('view')) {
-                view()->addFilePath($baseDirectory);
-            }
-
             // Autoload Composer
             if (is_file($baseDirectory . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php')) {
                 require($baseDirectory . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php');
             }
         }
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Loader::addPublicDir
-     *
-     * Adds a public directory for assets.
-     *
-     * @param string $publicDir
-     */
-    public function addPublicDir($publicDir, $offset = null)
-    {
-        // normalize the public directory with a trailing separator
-        $publicDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $publicDir);
-        $publicDir = PATH_PUBLIC . str_replace(PATH_PUBLIC, '', $publicDir);
-        $publicDir = rtrim($publicDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
-
-        if (is_dir($publicDir) and ! in_array($publicDir, $this->publicDirs)) {
-            if (isset($offset)) {
-                $this->publicDirs[ $offset ] = $publicDir;
-            } else {
-                $this->publicDirs[] = $publicDir;
-            }
-        }
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Loader::getPublicDirs
-     *
-     * Gets all public directories
-     *
-     * @param bool $reverse
-     *
-     * @return array
-     */
-    public function getPublicDirs($reverse = false)
-    {
-        return $reverse === true ? array_reverse($this->publicDirs) : $this->publicDirs;
     }
 
     // ------------------------------------------------------------------------
@@ -337,34 +288,6 @@ class Loader implements AutoloadInterface
 
     // ------------------------------------------------------------------------
 
-    public function loadModuleClass($class)
-    {
-        static $namespaceModules = [];
-
-        // class namespace
-        $namespaceParts = explode('\\', get_namespace($class));
-        $namespaceParts = array_filter($namespaceParts);
-
-        $namespace = reset($namespaceParts) . '\\';
-
-        if (empty($namespaceModules) && modules() !== false) {
-            if (false !== ($modules = modules()->getRegistry())) {
-                foreach ($modules as $module) {
-                    if ($module instanceof Module) {
-                        $namespaceModules[ $module->getNamespace() ] = $module;
-                    }
-                }
-            }
-        }
-
-        if (isset($namespaceModules[ $namespace ])) {
-            $module = $namespaceModules[ $namespace ];
-            $this->addNamespace($module->getNamespace(), $module->getRealPath());
-        }
-
-        return $this->loadClass($class);
-    }
-
     /**
      * Loads the class file for a given class name.
      *
@@ -439,19 +362,5 @@ class Loader implements AutoloadInterface
 
         // never found it
         return false;
-    }
-
-    // ------------------------------------------------------------------------
-
-    public function view($file, array $vars = [], $return = false)
-    {
-        return view($file, $vars, $return);
-    }
-
-    // ------------------------------------------------------------------------
-
-    public function page($file, array $vars = [], $return = false)
-    {
-        return view()->page($file, $vars, $return);
     }
 }
