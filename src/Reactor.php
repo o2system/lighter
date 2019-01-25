@@ -244,15 +244,7 @@ class Reactor extends Kernel
 
         if ($commander = router()->getCommander()) {
             if ($commander instanceof Kernel\Cli\Router\Datastructures\Commander) {
-
-                // Autoload Model
-                foreach ($this->modules as $module) {
-                    if (in_array($module->getType(), ['KERNEL', 'FRAMEWORK'])) {
-                        continue;
-                    }
-                    $module->loadModel();
-                }
-
+                
                 // Autoload Model
                 $modelClassName = str_replace('Commanders', 'Models', $commander->getName());
 

@@ -31,8 +31,7 @@
     "o2system/cache": "*",
     "o2system/database": "*",
     "o2system/security": "*",
-    "o2system/curl": "*",
-    "o2system/email": "*"
+    "o2system/curl": "*"
   },
   "autoload": {
     "psr-4": {
