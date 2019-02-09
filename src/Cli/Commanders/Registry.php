@@ -68,6 +68,13 @@ class Registry extends Commander
         ],
     ];
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::optionUpdate
+     * 
+     * @param string|null $type
+     */
     public function optionUpdate($type = null)
     {
         if (in_array($type, ['modules', 'languages'])) {
@@ -88,6 +95,13 @@ class Registry extends Commander
         exit(EXIT_SUCCESS);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::optionFlush
+     * 
+     * @param string|null $type
+     */
     public function optionFlush($type = null)
     {
         if (in_array($type, ['modules', 'languages'])) {
@@ -109,6 +123,11 @@ class Registry extends Commander
         exit(EXIT_SUCCESS);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::optionInfo
+     */
     public function optionInfo()
     {
         $table = new Table();
@@ -137,6 +156,13 @@ class Registry extends Commander
         exit(EXIT_SUCCESS);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::optionMetadata
+     * 
+     * @param string $type
+     */
     public function optionMetadata($type)
     {
         if (in_array($type, ['modules', 'languages'])) {

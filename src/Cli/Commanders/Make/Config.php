@@ -34,6 +34,13 @@ class Config extends Make
      */
     protected $commandDescription = 'CLI_MAKE_CONFIG_DESC';
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Config::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         parent::execute();

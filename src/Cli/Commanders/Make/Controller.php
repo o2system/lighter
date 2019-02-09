@@ -34,6 +34,13 @@ class Controller extends Make
      */
     protected $commandDescription = 'CLI_MAKE_CONTROLLER_DESC';
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Controller::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         parent::execute();

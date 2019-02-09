@@ -34,11 +34,25 @@ class Model extends Make
      */
     protected $commandDescription = 'CLI_MAKE_MODEL_DESC';
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Model::optionOrm
+     * 
+     * @param bool $useOrm
+     */
     public function optionOrm($useOrm = true)
     {
         $this->isUseORM = $useOrm;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Model::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         parent::execute();

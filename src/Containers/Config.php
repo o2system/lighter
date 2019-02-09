@@ -11,11 +11,11 @@
 
 // ------------------------------------------------------------------------
 
-namespace O2System\Reactor\Services;
+namespace O2System\Reactor\Containers;
 
 // ------------------------------------------------------------------------
 
-use O2System\Kernel\Containers\Environment;
+use O2System\Reactor\Containers\Environment;
 use O2System\Spl\Datastructures\SplArrayObject;
 
 /**

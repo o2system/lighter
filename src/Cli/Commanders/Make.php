@@ -87,6 +87,13 @@ class Make extends Commander
      */
     protected $optionFilename;
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Make::optionPath
+     *
+     * @param string $path
+     */
     public function optionPath($path)
     {
         $path = str_replace(['\\', '/'], DIRECTORY_SEPARATOR, $path);
@@ -100,6 +107,13 @@ class Make extends Commander
         $this->optionPath = rtrim($path, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Make::optionFilename
+     *
+     * @param string $name
+     */
     public function optionFilename($name)
     {
         $name = str_replace('.php', '', $name);
@@ -108,16 +122,37 @@ class Make extends Commander
         $this->optionPath = empty($this->optionPath) ? modules()->current()->getRealPath() : $this->optionPath;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Make::optionName
+     *
+     * @param string $name
+     */
     public function optionName($name)
     {
         $this->optionFilename($name);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Make::optionNamespace
+     *
+     * @param string $namespace
+     */
     public function optionNamespace($namespace)
     {
         $this->namespace = $namespace;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Make::getPhpTemplateFile
+     *
+     * @param string $filename
+     */
     public function getPhpTemplateFile($filename)
     {
         $directories = [

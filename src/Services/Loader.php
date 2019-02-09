@@ -247,11 +247,7 @@ class Loader implements AutoloadInterface
             PATH_FRAMEWORK . 'Helpers' . DIRECTORY_SEPARATOR,
             PATH_APP . 'Helpers' . DIRECTORY_SEPARATOR,
         ];
-
-        if (method_exists(modules(), 'current')) {
-            array_push($helperDirectories, modules()->current()->getPath() . 'Helpers' . DIRECTORY_SEPARATOR);
-        }
-
+        
         if ( ! array_key_exists($helper, $this->loadedHelpers)) {
             $this->loadedHelpers[ $helper ] = [];
         }

@@ -153,19 +153,25 @@ require __DIR__ . '/Helpers/Reactor.php';
 class Reactor extends Kernel
 {
     /**
+     * Reactor::$config
+     *
+     * Reactor Container Config
+     *
+     * @var Reactor\Containers\Config
+     */
+    public $config;
+
+    // ------------------------------------------------------------------------
+    
+    /**
+     * Reactor::$models
+     * 
      * Reactor Container Models
      *
      * @var Reactor\Containers\Models
      */
     public $models;
-
-    /**
-     * Reactor Container Modules
-     *
-     * @var Reactor\Containers\Modules
-     */
-    public $modules;
-
+    
     // ------------------------------------------------------------------------
 
     /**
@@ -181,17 +187,21 @@ class Reactor extends Kernel
             profiler()->watch('Starting O2System Reactor');
         }
 
+        // Instantiate Config Container
+        if (profiler() !== false) {
+            profiler()->watch('Starting Config Container');
+        }
+
+        $this->config = new Reactor\Containers\Config();
+
         if (profiler() !== false) {
             profiler()->watch('Starting Reactor Services');
         }
 
         $services = [
-            'Containers\Globals' => 'globals',
-            'Containers\Environment' => 'environment',
             'Services\Loader' => 'loader',
-            'Services\Config' => 'config'
         ];
-
+        
         foreach ($services as $className => $classOffset) {
             $this->services->load($className, $classOffset);
         }
@@ -203,12 +213,14 @@ class Reactor extends Kernel
 
         $this->models = new Reactor\Containers\Models();
 
-        // Instantiate Cache Service
-        if (profiler() !== false) {
-            profiler()->watch('Starting Cache Service');
+        if (config()->loadFile('cache') === true) {
+            // Instantiate Cache Service
+            if (profiler() !== false) {
+                profiler()->watch('Starting Cache Service');
+            }
+            
+            $this->services->add(new Reactor\Services\Cache(config('cache', true)), 'cache');
         }
-
-        $this->services->add(new Reactor\Services\Cache(config('cache', true)), 'cache');
     }
 
     // ------------------------------------------------------------------------
@@ -285,86 +297,53 @@ class Reactor extends Kernel
         router()->parseRequest();
         
         // Instantiate Http Middleware Service
-        $this->services->load(Reactor\Http\Middleware::class);
+        $this->services->load('Http\Middleware', 'middleware');
 
         if (profiler() !== false) {
             profiler()->watch('Running Middleware Service: Pre Controller');
         }
         middleware()->run();
+        
+        if($this->services->has('controller')) {
+            $controller = $this->services->get('controller');
+            
+            // Autoload Model
+            $modelClassName = str_replace('Controllers', 'Models', $controller->getName());
 
-        if (false !== ($controller = $this->services->get('controller'))) {
-            if ($controller instanceof Kernel\Http\Router\Datastructures\Controller) {
-                // Autoload Model
-                $modelClassName = str_replace('Controllers', 'Models', $controller->getName());
-
-                if (class_exists($modelClassName)) {
-                    $this->models->register($modelClassName, 'controller');
-                }
-
-                // Initialize Controller
-                if (profiler() !== false) {
-                    profiler()->watch('Calling Hooks Service: Pre Controller');
-                }
-
-                if (profiler() !== false) {
-                    profiler()->watch('Instantiating Requested Controller: ' . $controller->getClass());
-                }
-                $requestController = $controller->getInstance();
-
-                if (method_exists($requestController, '__reconstruct')) {
-                    $requestController->__reconstruct();
-                } elseif (method_exists($requestController, 'initialize')) {
-                    $requestController->initialize();
-                }
-
-                $this->services->add($requestController, 'controller');
-
-                if (profiler() !== false) {
-                    profiler()->watch('Calling Middleware Service: Post Controller');
-                }
-
-                $requestMethod = $controller->getRequestMethod();
-                $requestMethodArgs = $controller->getRequestMethodArgs();
-
-                // Call the requested controller method
-                if (profiler() !== false) {
-                    profiler()->watch('Execute Requested Controller Method');
-                }
-                ob_start();
-                $requestControllerOutput = $requestController->__call($requestMethod, $requestMethodArgs);
-
-                if (empty($requestControllerOutput)) {
-                    $requestControllerOutput = ob_get_contents();
-                    ob_end_clean();
-                }
-
-                if (empty($requestControllerOutput) or $requestControllerOutput === '') {
-                    // Send default error 204 - No Content
-                    output()->sendError(204);
-                } elseif (is_bool($requestControllerOutput)) {
-                    if ($requestControllerOutput === true) {
-                        output()->sendError(200);
-                    } elseif ($requestControllerOutput === false) {
-                        output()->sendError(204);
-                    }
-                } elseif (is_array($requestControllerOutput) or is_object($requestControllerOutput)) {
-                    $requestController->sendPayload($requestControllerOutput);
-                } elseif (is_numeric($requestControllerOutput)) {
-                    output()->sendError($requestControllerOutput);
-                } elseif (is_string($requestControllerOutput)) {
-                    if (is_json($requestControllerOutput)) {
-                        output()->setContentType('application/json');
-                        output()->send($requestControllerOutput);
-                    } elseif (is_serialized($requestControllerOutput)) {
-                        output()->send($requestControllerOutput);
-                    } else {
-                        output()->send($requestControllerOutput);
-                    }
-                }
+            if (class_exists($modelClassName)) {
+                $this->models->register($modelClassName, 'controller');
             }
-        }
 
-        // Show Error (404) Page Not Found
-        output()->sendError(404);
+            if (profiler() !== false) {
+                profiler()->watch('Instantiating Requested Controller: ' . $controller->getClass());
+            }
+            $requestController = $controller->getInstance();
+
+            if (method_exists($requestController, '__reconstruct')) {
+                $requestController->__reconstruct();
+            } elseif (method_exists($requestController, 'initialize')) {
+                $requestController->initialize();
+            }
+
+            $this->services->add($requestController, 'controller');
+
+            if (profiler() !== false) {
+                profiler()->watch('Calling Middleware Service: Post Controller');
+            }
+            middleware()->run();
+
+            $requestMethod = $controller->getRequestMethod();
+            $requestMethodArgs = $controller->getRequestMethodArgs();
+
+            // Call the requested controller method
+            if (profiler() !== false) {
+                profiler()->watch('Execute Requested Controller Method');
+            }
+
+            $requestController->__call($requestMethod, $requestMethodArgs);
+        } else {
+            // Show Error (404) Page Not Found
+            output()->sendError(404);
+        }
     }
 }

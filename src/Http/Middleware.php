@@ -32,7 +32,6 @@ class Middleware extends AbstractProvider implements
 {
     public function __construct()
     {
-        $this->register(new Middleware\Environment(), 'environment');
         $this->register(new Middleware\Maintenance(), 'maintenance');
     }
 
@@ -45,7 +44,7 @@ class Middleware extends AbstractProvider implements
      */
     public function run()
     {
-        if ($this->count()) {
+        if ( ! empty($this->registry)) {
 
             $request = server_request();
 
@@ -54,6 +53,8 @@ class Middleware extends AbstractProvider implements
             }
         }
     }
+
+    // ------------------------------------------------------------------------
 
     /**
      * Process an incoming server request

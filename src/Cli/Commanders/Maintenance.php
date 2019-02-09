@@ -117,6 +117,11 @@ class Maintenance extends Commander
 
     // ------------------------------------------------------------------------
 
+    /**
+     * Maintenance::optionSwitch
+     * 
+     * @param string $switch
+     */
     public function optionSwitch($switch)
     {
         $switch = strtoupper($switch);
@@ -126,26 +131,61 @@ class Maintenance extends Commander
         }
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Maintenance::optionMode
+     * 
+     * @param string $mode
+     */
     public function optionMode($mode)
     {
         $this->optionMode = $mode;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Maintenance::optionLifetime
+     * 
+     * @param int $lifetime
+     */
     public function optionLifetime($lifetime)
     {
         $this->optionLifetime = (int)$lifetime;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Maintenance::optionTitle
+     * 
+     * @param string $title
+     */
     public function optionTitle($title)
     {
         $this->optionTitle = trim($title);
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Maintenance::optionMessage
+     * 
+     * @param string $message
+     */
     public function optionMessage($message)
     {
         $this->optionMessage = $message;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Maintenance::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         $options = input()->get();

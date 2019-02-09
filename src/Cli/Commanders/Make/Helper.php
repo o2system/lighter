@@ -34,6 +34,13 @@ class Helper extends Make
      */
     protected $commandDescription = 'CLI_MAKE_HELPER_DESC';
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Helper::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         parent::execute();

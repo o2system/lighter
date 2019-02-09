@@ -34,6 +34,13 @@ class Library extends Make
      */
     protected $commandDescription = 'CLI_MAKE_LIBRARY_DESC';
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Library::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         parent::execute();

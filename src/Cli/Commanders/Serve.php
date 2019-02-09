@@ -79,16 +79,37 @@ class Serve extends Commander
      */
     protected $optionPort;
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Serve::optionHost
+     * 
+     * @param string $host
+     */
     public function optionHost($host)
     {
         $this->optionHost = $host;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Serve::optionPort
+     * 
+     * @param int $port
+     */
     public function optionPort($port)
     {
         $this->optionPort = $port;
     }
 
+    // ------------------------------------------------------------------------
+
+    /**
+     * Serve::execute
+     * 
+     * @throws \ReflectionException
+     */
     public function execute()
     {
         $options = input()->get();

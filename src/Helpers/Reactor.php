@@ -16,7 +16,7 @@ if ( ! function_exists('o2system')) {
      *
      * Convenient shortcut for O2System Framework Instance
      *
-     * @return O2System\Framework
+     * @return O2System\Reactor
      */
     function o2system()
     {
@@ -32,11 +32,15 @@ if ( ! function_exists('loader')) {
      *
      * Convenient shortcut for O2System Framework Loader service.
      *
-     * @return O2System\Framework\Services\Loader
+     * @return bool|O2System\Framework\Services\Loader
      */
     function loader()
     {
-        return services('loader');
+        if(services()->has('loader')) {
+            return services()->get('loader');
+        }
+
+        return false;
     }
 }
 
@@ -48,25 +52,23 @@ if ( ! function_exists('config')) {
      *
      * Convenient shortcut for O2System Framework Config service.
      *
-     * @return O2System\Framework\Services\Config|\O2System\Kernel\Datastructures\Config
+     * @return O2System\Reactor\Containers\Config|\O2System\Kernel\Datastructures\Config
      */
     function config()
     {
         $args = func_get_args();
 
-        if ($countArgs = count($args)) {
-            if(services()->has('config')) {
-                $config = services('config');
+        if ($numArgs = count($args)) {
+            $config = o2system()->config;
 
-                if ($countArgs == 1) {
-                    return call_user_func_array([&$config, 'getItem'], $args);
-                } else {
-                    return call_user_func_array([&$config, 'loadFile'], $args);
-                }
+            if($numArgs == 1) {
+                return call_user_func_array([&$config, 'getItem'], $args);
+            } else {
+                return call_user_func_array([&$config, 'loadFile'], $args);
             }
         }
 
-        return services('config');
+        return o2system()->config;
     }
 }
 
@@ -84,26 +86,6 @@ if ( ! function_exists('cache')) {
     {
         if(services()->has('cache')) {
             return services()->get('cache');
-        }
-
-        return false;
-    }
-}
-
-// ------------------------------------------------------------------------
-
-if ( ! function_exists('hooks')) {
-    /**
-     * hooks
-     *
-     * Convenient shortcut for O2System Framework Hooks service.
-     *
-     * @return O2System\Framework\Services\Hooks Returns FALSE if service not exists.
-     */
-    function hooks()
-    {
-        if(services()->has('hooks')) {
-            return services()->get('hooks');
         }
 
         return false;
@@ -156,11 +138,15 @@ if ( ! function_exists('router')) {
      *
      * Convenient shortcut for O2System Framework Router service.
      *
-     * @return O2System\Framework\Http\Router|O2System\Framework\Cli\Router
+     * @return bool|O2System\Framework\Http\Router|O2System\Framework\Cli\Router
      */
     function router()
     {
-        return services('router');
+        if(services()->has('router')) {
+            return services()->get('router');
+        }
+
+        return false;
     }
 }
 
@@ -198,11 +184,15 @@ if ( ! function_exists('middleware')) {
      *
      * Convenient shortcut for O2System Framework Http Middleware service.
      *
-     * @return O2System\Framework\Http\Middleware
+     * @return bool|O2System\Framework\Http\Middleware
      */
     function middleware()
     {
-        return services('middleware');
+        if(services()->has('middleware')) {
+            return services()->get('middleware');
+        }
+
+        return false;
     }
 }
 
@@ -218,14 +208,18 @@ if ( ! function_exists('controller')) {
      */
     function controller()
     {
-        $args = func_get_args();
+        if(services()->has('controller')) {
+            $args = func_get_args();
 
-        if (count($args)) {
-            $controller = services()->get('controller');
+            if (count($args)) {
+                $controller = services()->get('controller');
 
-            return call_user_func_array([&$controller, '__call'], $args);
+                return call_user_func_array([&$controller, '__call'], $args);
+            }
+
+            return services('controller');
         }
 
-        return services('controller');
+        return false;
     }
 }
