@@ -16,7 +16,7 @@ namespace O2System\Reactor\Containers;
 // ------------------------------------------------------------------------
 
 use O2System\Reactor\Containers\Environment;
-use O2System\Spl\Datastructures\SplArrayObject;
+use O2System\Spl\DataStructures\SplArrayObject;
 
 /**
  * Class Config
