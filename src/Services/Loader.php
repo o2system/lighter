@@ -30,17 +30,6 @@ use O2System\Reactor\Datastructures\Module;
 class Loader implements AutoloadInterface
 {
     /**
-     * Loader::$publicDirs
-     *
-     * Loader Public Directories.
-     *
-     * @var array
-     */
-    protected $publicDirs = [
-        PATH_PUBLIC,
-    ];
-
-    /**
      * Loader::$namespaceDirs
      *
      * Loader Namespaces Directories.
@@ -244,7 +233,7 @@ class Loader implements AutoloadInterface
 
         $helperDirectories = [
             PATH_KERNEL . 'Helpers' . DIRECTORY_SEPARATOR,
-            PATH_FRAMEWORK . 'Helpers' . DIRECTORY_SEPARATOR,
+            PATH_REACTOR . 'Helpers' . DIRECTORY_SEPARATOR,
             PATH_APP . 'Helpers' . DIRECTORY_SEPARATOR,
         ];
         
