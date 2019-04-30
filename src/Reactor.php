@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System PHP Reactor package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -119,17 +119,16 @@ if ( ! defined('PATH_STORAGE')) {
 
 /*
  *---------------------------------------------------------------
- * RESOURCES PATH
+ * DATABASE PATH
  *---------------------------------------------------------------
  *
- * RealPath to writable resources folder.
+ * RealPath to writable database folder.
  *
  * WITH TRAILING SLASH!
  */
-if ( ! defined('PATH_RESOURCES')) {
-    define('PATH_RESOURCES', PATH_ROOT . DIR_RESOURCES . DIRECTORY_SEPARATOR);
+if ( ! defined('PATH_DATABASE')) {
+    define('PATH_DATABASE', PATH_ROOT . DIR_DATABASE . DIRECTORY_SEPARATOR);
 }
-
 
 /*
  *---------------------------------------------------------------
@@ -161,23 +160,37 @@ class Reactor extends Kernel
      */
     public $config;
 
-    // ------------------------------------------------------------------------
-    
+    /**
+     * Reactor::$globals
+     *
+     * Reactor Container Globals
+     *
+     * @var Reactor\Containers\Globals
+     */
+    public $globals;
+
+    /**
+     * Reactor::$environment
+     *
+     * Reactor Container Environment
+     *
+     * @var Reactor\Containers\Environment
+     */
+    public $environment;
+
     /**
      * Reactor::$models
-     * 
+     *
      * Reactor Container Models
      *
      * @var Reactor\Containers\Models
      */
     public $models;
-    
+
     // ------------------------------------------------------------------------
 
     /**
      * Reactor::__construct
-     *
-     * @return Reactor
      */
     protected function __construct()
     {
@@ -205,6 +218,25 @@ class Reactor extends Kernel
         foreach ($services as $className => $classOffset) {
             $this->services->load($className, $classOffset);
         }
+
+        // Instantiate Config Container
+        if (profiler() !== false) {
+            profiler()->watch('Starting Config Container');
+        }
+
+        $this->config = new Reactor\Containers\Config();
+
+        // Instantiate Globals Container
+        if (profiler() !== false) {
+            profiler()->watch('Starting Globals Container');
+        }
+        $this->globals = new Reactor\Containers\Globals();
+
+        // Instantiate Environment Container
+        if (profiler() !== false) {
+            profiler()->watch('Starting Environment Container');
+        }
+        $this->environment = new Reactor\Containers\Environment();
 
         // Instantiate Models Container
         if (profiler() !== false) {
@@ -243,6 +275,7 @@ class Reactor extends Kernel
      * Reactor::cliHandler
      *
      * @return void
+     * @throws \ReflectionException
      */
     private function cliHandler()
     {
