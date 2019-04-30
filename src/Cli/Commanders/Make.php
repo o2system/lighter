@@ -156,7 +156,7 @@ class Make extends Commander
     public function getPhpTemplateFile($filename)
     {
         $directories = [
-            PATH_REACTOR . 'Config' . DIRECTORY_SEPARATOR . 'PhpTemplateFiles',
+            PATH_FRAMEWORK . 'Config' . DIRECTORY_SEPARATOR . 'PhpTemplateFiles',
         ];
 
     }

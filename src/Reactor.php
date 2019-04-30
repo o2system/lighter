@@ -288,7 +288,7 @@ class Reactor extends Kernel
         router()->parseRequest();
 
         if ($commander = router()->getCommander()) {
-            if ($commander instanceof Kernel\Cli\Router\Datastructures\Commander) {
+            if ($commander instanceof Kernel\Cli\Router\DataStructures\Commander) {
                 
                 // Autoload Model
                 $modelClassName = str_replace('Commanders', 'Models', $commander->getName());

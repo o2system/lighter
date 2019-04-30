@@ -52,7 +52,7 @@ if ( ! function_exists('config')) {
      *
      * Convenient shortcut for O2System Framework Config service.
      *
-     * @return O2System\Reactor\Containers\Config|\O2System\Kernel\Datastructures\Config
+     * @return O2System\Reactor\Containers\Config|\O2System\Kernel\DataStructures\Config
      */
     function config()
     {

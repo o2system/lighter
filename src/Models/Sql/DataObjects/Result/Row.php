@@ -17,7 +17,7 @@ namespace O2System\Reactor\Models\Sql\DataObjects\Result;
 
 use O2System\Database;
 use O2System\Reactor\Models\Sql\Model;
-use O2System\Spl\Datastructures\SplArrayObject;
+use O2System\Spl\DataStructures\SplArrayObject;
 use O2System\Spl\Info\SplClassInfo;
 
 /**

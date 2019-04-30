@@ -126,7 +126,7 @@ if ( ! function_exists('parse_date')) {
                 : strtotime(
                     $timestamp
                 )));
-        $date_parts = new \O2System\Spl\Datastructures\SplArrayObject(
+        $date_parts = new \O2System\Spl\DataStructures\SplArrayObject(
             [
                 't'  => $timestamp,
                 'd'  => date('d', $timestamp),
@@ -875,7 +875,7 @@ if ( ! function_exists('format_time')) {
         $format[ 'minutes' ] = $minutes;
         $format[ 'seconds' ] = $seconds;
 
-        return new \O2System\Spl\Datastructures\SplArrayObject($format);
+        return new \O2System\Spl\DataStructures\SplArrayObject($format);
     }
 }
 

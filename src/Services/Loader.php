@@ -16,7 +16,7 @@ namespace O2System\Reactor\Services;
 // ------------------------------------------------------------------------
 
 use O2System\Psr\Loader\AutoloadInterface;
-use O2System\Reactor\Datastructures\Module;
+use O2System\Reactor\DataStructures\Module;
 
 /**
  * O2System Loader
@@ -29,6 +29,17 @@ use O2System\Reactor\Datastructures\Module;
  */
 class Loader implements AutoloadInterface
 {
+    /**
+     * Loader::$publicDirs
+     *
+     * Loader Public Directories.
+     *
+     * @var array
+     */
+    protected $publicDirs = [
+        PATH_PUBLIC,
+    ];
+
     /**
      * Loader::$namespaceDirs
      *
@@ -233,7 +244,7 @@ class Loader implements AutoloadInterface
 
         $helperDirectories = [
             PATH_KERNEL . 'Helpers' . DIRECTORY_SEPARATOR,
-            PATH_REACTOR . 'Helpers' . DIRECTORY_SEPARATOR,
+            PATH_FRAMEWORK . 'Helpers' . DIRECTORY_SEPARATOR,
             PATH_APP . 'Helpers' . DIRECTORY_SEPARATOR,
         ];
         
