@@ -16,7 +16,7 @@ namespace O2System\Reactor\Models\Files\Traits;
 // ------------------------------------------------------------------------
 
 use O2System\Reactor\Models\Sql\DataObjects;
-use O2System\Spl\Datastructures\SplArrayObject;
+use O2System\Spl\DataStructures\SplArrayObject;
 use O2System\Spl\Iterators\ArrayIterator;
 
 /**

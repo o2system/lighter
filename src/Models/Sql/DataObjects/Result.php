@@ -22,7 +22,7 @@ use O2System\Spl\Iterators\ArrayIterator;
 /**
  * Class Result
  *
- * @package O2System\Database\Datastructures
+ * @package O2System\Database\DataStructures
  */
 class Result extends ArrayIterator
 {

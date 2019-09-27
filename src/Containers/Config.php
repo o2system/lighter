@@ -16,7 +16,7 @@ namespace O2System\Reactor\Containers;
 // ------------------------------------------------------------------------
 
 use O2System\Reactor\Containers\Environment;
-use O2System\Spl\Datastructures\SplArrayObject;
+use O2System\Spl\DataStructures\SplArrayObject;
 
 /**
  * Class Config
@@ -126,7 +126,7 @@ class Config extends Environment
      *
      * @param string $offset
      *
-     * @return mixed|\O2System\Spl\Datastructures\SplArrayObject
+     * @return mixed|\O2System\Spl\DataStructures\SplArrayObject
      */
     public function &getItem($offset)
     {

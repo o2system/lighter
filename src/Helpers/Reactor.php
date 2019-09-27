@@ -52,7 +52,7 @@ if ( ! function_exists('config')) {
      *
      * Convenient shortcut for O2System Framework Config service.
      *
-     * @return O2System\Reactor\Containers\Config|\O2System\Kernel\Datastructures\Config
+     * @return O2System\Reactor\Containers\Config|\O2System\Kernel\DataStructures\Config
      */
     function config()
     {
@@ -69,6 +69,58 @@ if ( ! function_exists('config')) {
         }
 
         return o2system()->config;
+    }
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('globals')) {
+    /**
+     * globals
+     *
+     * Convenient shortcut for O2System Framework globals container.
+     *
+     * @return mixed|O2System\Reactor\Containers\Globals
+     */
+    function globals()
+    {
+        $args = func_get_args();
+
+        if (count($args)) {
+            if (isset($GLOBALS[ $args[ 0 ] ])) {
+                return $GLOBALS[ $args[ 0 ] ];
+            }
+
+            return null;
+        }
+
+        return o2system()->globals;
+    }
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('env')) {
+    /**
+     * env
+     *
+     * Convenient shortcut for O2System Framework environment container.
+     *
+     * @return mixed|O2System\Framework\Containers\Globals
+     */
+    function env()
+    {
+        $args = func_get_args();
+
+        if (count($args)) {
+            if (isset($_ENV[ $args[ 0 ] ])) {
+                return $_ENV[ $args[ 0 ] ];
+            }
+
+            return null;
+        }
+
+        return o2system()->environment;
     }
 }
 
