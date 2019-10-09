@@ -23,11 +23,11 @@ use O2System\Kernel\Http;
  */
 class Router extends Http\Router
 {
-    public function parseRequest(Http\Message\Uri $uri = null)
+    public function handle(Http\Message\Uri $uri = null)
     {
         // Load app addresses config
         $this->addresses = config()->loadFile('addresses', true);
 
-        return parent::parseRequest($uri);
+        return parent::handle($uri);
     }
 }
