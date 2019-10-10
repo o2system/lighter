@@ -116,10 +116,10 @@ class Serve extends Commander
 
         if (empty($options)) {
             $_GET[ 'host' ] = 'localhost';
-            $_GET[ 'port' ] = 8000;
+            $_GET[ 'port' ] = 2107;
         }
 
-        parent::execute();
+        $this->__callOptions();
 
         output()->write(
             (new Format())
