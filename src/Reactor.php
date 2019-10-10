@@ -285,7 +285,7 @@ class Reactor extends Kernel
         if (profiler() !== false) {
             profiler()->watch('Parse Router Request');
         }
-        router()->parseRequest();
+        router()->handle();
 
         if ($commander = router()->getCommander()) {
             if ($commander instanceof Kernel\Cli\Router\DataStructures\Commander) {
@@ -327,7 +327,7 @@ class Reactor extends Kernel
         if (profiler() !== false) {
             profiler()->watch('Parse Router Request');
         }
-        router()->parseRequest();
+        router()->handle();
         
         // Instantiate Http Middleware Service
         $this->services->load('Http\Middleware', 'middleware');
