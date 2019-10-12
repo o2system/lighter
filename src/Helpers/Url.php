@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -60,6 +60,7 @@ if ( ! function_exists('domain_url')) {
     function domain_url($segments = null, $query = null, $subdomain = null)
     {
         $uri = (new \O2System\Kernel\Http\Message\Uri())
+            ->withSubDomain($subdomain)
             ->withSegments(new \O2System\Kernel\Http\Message\Uri\Segments(''))
             ->withQuery('');
 

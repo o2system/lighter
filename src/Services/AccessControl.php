@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,7 +11,7 @@
 
 // ------------------------------------------------------------------------
 
-namespace O2System\Reactor\Libraries\AccessControl;
+namespace O2System\Reactor\Services;
 
 // ------------------------------------------------------------------------
 
@@ -20,10 +20,10 @@ use O2System\Security\Authentication\User\Role;
 use O2System\Spl\Exceptions\RuntimeException;
 
 /**
- * Class User
- * @package O2System\Reactor\Libraries\AccessControl
+ * Class AccessControl
+ * @package O2System\Reactor\Services
  */
-class User extends \O2System\Security\Authentication\User
+class AccessControl extends \O2System\Security\Authentication\User
 {
     /**
      * User::$app
@@ -170,6 +170,10 @@ class User extends \O2System\Security\Authentication\User
 
                 if ($employee = $user->employee) {
                     $account->store('employee', $employee);
+                }
+
+                if ($member = $user->member) {
+                    $account->store('member', $member);
                 }
 
                 if ($role = $user->role) {

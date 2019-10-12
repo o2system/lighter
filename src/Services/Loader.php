@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,8 +15,8 @@ namespace O2System\Reactor\Services;
 
 // ------------------------------------------------------------------------
 
+use O2System\Reactor\Containers\Modules;
 use O2System\Psr\Loader\AutoloadInterface;
-use O2System\Reactor\DataStructures\Module;
 
 /**
  * O2System Loader
@@ -37,7 +37,7 @@ class Loader implements AutoloadInterface
      * @var array
      */
     protected $publicDirs = [
-        PATH_PUBLIC,
+        'default' => PATH_PUBLIC,
     ];
 
     /**
@@ -79,7 +79,7 @@ class Loader implements AutoloadInterface
         // Add Kernel Namespace
         $this->addNamespace('O2System\Kernel', PATH_KERNEL);
 
-        if (defined('PATH_REACTOR')) {
+        if (class_exists('O2System', false)) {
             $this->addNamespace('O2System\Reactor', PATH_REACTOR);
         }
     }
@@ -87,6 +87,8 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::register
+     *
      * Register loader with SPL autoloader stack.
      *
      * @return void
@@ -100,6 +102,8 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::addNamespace
+     *
      * Adds a base directory for a namespace prefix.
      *
      * @param string $namespace     The namespace prefix.
@@ -147,6 +151,11 @@ class Loader implements AutoloadInterface
             // Register Namespace Output FilePath
             output()->addFilePath($baseDirectory);
 
+            // Register Namespace Views FilePath
+            if (services()->has('view')) {
+                view()->addFilePath($baseDirectory);
+            }
+
             // Autoload Composer
             if (is_file($baseDirectory . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php')) {
                 require($baseDirectory . 'vendor' . DIRECTORY_SEPARATOR . 'autoload.php');
@@ -157,6 +166,48 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::addPublicDir
+     *
+     * Adds a public directory for assets.
+     *
+     * @param string $publicDir
+     * @param null $offset
+     */
+    public function addPublicDir($publicDir, $offset = null)
+    {
+        // normalize the public directory with a trailing separator
+        $publicDir = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $publicDir);
+        $publicDir = PATH_PUBLIC . str_replace(PATH_PUBLIC, '', $publicDir);
+        $publicDir = rtrim($publicDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR;
+
+        if (is_dir($publicDir) and ! in_array($publicDir, $this->publicDirs)) {
+            if (isset($offset)) {
+                $this->publicDirs[ $offset ] = $publicDir;
+            } else {
+                $this->publicDirs[ rtrim(str_replace(PATH_PUBLIC, '', $publicDir), '/') ] = $publicDir;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::getPublicDirs
+     *
+     * Gets all public directories
+     *
+     * @param bool $reverse
+     *
+     * @return array
+     */
+    public function getPublicDirs($reverse = false)
+    {
+        return $reverse === true ? array_reverse($this->publicDirs) : $this->publicDirs;
+    }
+
+    /**
+     * Loader::getDirNamespace
+     *
      * Get Namespace
      *
      * Get PSR4 Directory base on directory path
@@ -182,6 +233,8 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::getClassNamespaceDirs
+     *
      * Get Namespace Class Directory
      *
      * @param string $className
@@ -203,6 +256,8 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::getNamespaceDirs
+     *
      * Get Namespace Directory
      *
      * @param string $namespace
@@ -222,69 +277,9 @@ class Loader implements AutoloadInterface
 
     // ------------------------------------------------------------------------
 
-    public function loadHelpers(array $helpers)
-    {
-        foreach ($helpers as $helper) {
-            $this->loadHelper($helper);
-        }
-    }
-
-    public function loadHelper($helper)
-    {
-        if (array_key_exists($helper, $this->loadedHelpers)) {
-
-            return;
-        }
-
-        if ($this->requireFile($helper)) {
-            $this->loadedHelpers[ pathinfo($helper, PATHINFO_FILENAME) ][] = $helper;
-
-            return;
-        }
-
-        $helperDirectories = [
-            PATH_KERNEL . 'Helpers' . DIRECTORY_SEPARATOR,
-            PATH_FRAMEWORK . 'Helpers' . DIRECTORY_SEPARATOR,
-            PATH_APP . 'Helpers' . DIRECTORY_SEPARATOR,
-        ];
-        
-        if ( ! array_key_exists($helper, $this->loadedHelpers)) {
-            $this->loadedHelpers[ $helper ] = [];
-        }
-
-        foreach ($helperDirectories as $helperDirectory) {
-
-            $helperFilePath = $helperDirectory . studlycase($helper) . '.php';
-
-            if (in_array($helperFilePath, $this->loadedHelpers[ $helper ])) {
-                continue;
-            } elseif ($this->requireFile($helperFilePath)) {
-                $this->loadedHelpers[ $helper ][] = $helperFilePath;
-            }
-        }
-    }
-
     /**
-     * If a file exists, require it from the file system.
+     * Loader::loadClass
      *
-     * @param string $file The file to require.
-     *
-     * @return bool True if the file exists, false if not.
-     */
-    public function requireFile($file)
-    {
-        if (is_file($file)) {
-            require_once $file;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
      * Loads the class file for a given class name.
      *
      * @param string $class The fully-qualified class name.
@@ -324,6 +319,8 @@ class Loader implements AutoloadInterface
     // ------------------------------------------------------------------------
 
     /**
+     * Loader::loadMappedFile
+     *
      * Load the mapped file for a namespace prefix and relative class.
      *
      * @param string $namespace     The namespace prefix.
@@ -358,5 +355,262 @@ class Loader implements AutoloadInterface
 
         // never found it
         return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::requireFile
+     *
+     * If a file exists, require it from the file system.
+     *
+     * @param string $file The file to require.
+     *
+     * @return bool True if the file exists, false if not.
+     */
+    public function requireFile($file)
+    {
+        if (is_file($file)) {
+            require_once $file;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::config
+     *
+     * @param string $config
+     *
+     * @return mixed
+     */
+    public function config($config)
+    {
+        return config()->loadFile($config, true);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::helper
+     *
+     * @param string $helper
+     */
+    public function helper($helper)
+    {
+        $this->loadHelper($helper);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::loadHelper
+     *
+     * @param string $helper
+     */
+    public function loadHelper($helper)
+    {
+        if (array_key_exists($helper, $this->loadedHelpers)) {
+
+            return;
+        }
+
+        if ($this->requireFile($helper)) {
+            $this->loadedHelpers[ pathinfo($helper, PATHINFO_FILENAME) ][] = $helper;
+
+            return;
+        }
+
+        $helperDirectories = [
+            PATH_KERNEL . 'Helpers' . DIRECTORY_SEPARATOR,
+            PATH_REACTOR . 'Helpers' . DIRECTORY_SEPARATOR,
+            PATH_APP . 'Helpers' . DIRECTORY_SEPARATOR,
+        ];
+
+        if ( ! array_key_exists($helper, $this->loadedHelpers)) {
+            $this->loadedHelpers[ $helper ] = [];
+        }
+
+        foreach ($helperDirectories as $helperDirectory) {
+
+            $helperFilePath = $helperDirectory . studlycase($helper) . '.php';
+
+            if (in_array($helperFilePath, $this->loadedHelpers[ $helper ])) {
+                continue;
+            } elseif ($this->requireFile($helperFilePath)) {
+                $this->loadedHelpers[ $helper ][] = $helperFilePath;
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::helpers
+     *
+     * @param array $helpers
+     */
+    public function helpers(array $helpers)
+    {
+        $this->loadHelpers($helpers);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::loadHelpers
+     *
+     * @param array $helpers
+     */
+    public function loadHelpers(array $helpers)
+    {
+        foreach ($helpers as $helper) {
+            $this->loadHelper($helper);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::library
+     *
+     * @param string|Object $class
+     * @param string|null   $name
+     */
+    public function library($class, $name = null)
+    {
+        $this->service($class, $name);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::service
+     *
+     * @param string|Object $class
+     * @param string|null   $name
+     */
+    public function service($class, $name = null)
+    {
+        services()->load($class, $name);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::libraries
+     *
+     * @param array $classes
+     */
+    public function libraries(array $classes)
+    {
+        $this->services($classes);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::services
+     *
+     * @param array $classes
+     */
+    public function services(array $classes)
+    {
+        foreach ($classes as $name => $class) {
+            if (is_numeric($name)) {
+                services()->load($class);
+            } elseif (is_string($name)) {
+                services()->load($class, $name);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::model
+     *
+     * @param string $model
+     */
+    public function model($model)
+    {
+        models()->load($model);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::models
+     *
+     * @param array $models
+     */
+    public function models(array $models)
+    {
+        foreach ($models as $model) {
+            models()->load($model);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::view
+     *
+     * @param string  $file
+     * @param array   $vars
+     * @param bool    $return
+     *
+     * @return \O2System\Reactor\Http\View|string
+     */
+    public function view($file, array $vars = [], $return = false)
+    {
+        return view($file, $vars, $return);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::page
+     *
+     * @param string $file
+     * @param array  $vars
+     * @param bool   $return
+     *
+     * @return bool|string
+     */
+    public function page($file, array $vars = [], $return = false)
+    {
+        return view()->page($file, $vars, $return);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::model
+     *
+     * @param string $file
+     * @param array  $vars
+     */
+    public function modal($file, array $vars = [])
+    {
+        return view()->modal($file, $vars);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Loader::language
+     *
+     * @param string $file
+     *
+     * @return \O2System\Reactor\Services\Language|\O2System\Kernel\Services\Language
+     */
+    public function language($file)
+    {
+        return language()->loadFile($file);
     }
 }

@@ -18,7 +18,7 @@ namespace O2System\Reactor\Http;
 /**
  * Class Controller
  *
- * @package O2System\Framework\Http
+ * @package O2System\Reactor\Http
  */
 class Controller extends \O2System\Kernel\Http\Controller
 {

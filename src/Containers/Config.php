@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,41 +15,35 @@ namespace O2System\Reactor\Containers;
 
 // ------------------------------------------------------------------------
 
-use O2System\Reactor\Containers\Environment;
 use O2System\Spl\DataStructures\SplArrayObject;
+use O2System\Spl\Traits\Collectors\FilePathCollectorTrait;
 
 /**
  * Class Config
  *
- * @package O2System\Reactor\Services
+ * @package O2System\Reactor\Containers
  */
 class Config extends Environment
 {
+    use FilePathCollectorTrait;
+
+    /**
+     * Config::$loaded
+     *
+     * @var array
+     */
+    protected $loaded = [];
+
+    // ------------------------------------------------------------------------
+
     /**
      * Config::__construct
      */
     public function __construct()
     {
-        if (is_file(
-            $filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . ucfirst(
-                    strtolower(ENVIRONMENT)
-                ) . DIRECTORY_SEPARATOR . 'Config.php'
-        )) {
-            include($filePath);
-        } elseif (is_file($filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . 'Config.php')) {
-            include($filePath);
-        }
-
-        if (isset($config) AND is_array($config)) {
-            // Set default timezone
-            if (isset($config['datetime']['timezone'])) {
-                date_default_timezone_set($config['datetime']['timezone']);
-            }
-
-            $this->merge($config);
-
-            unset($config);
-        }
+        $this->setFileDirName('Config');
+        $this->addFilePath(PATH_REACTOR);
+        $this->addFilePath(PATH_APP);
     }
 
     // ------------------------------------------------------------------------
@@ -70,24 +64,23 @@ class Config extends Environment
         $configFile = str_replace($basename, $filename, $offset);
         $offset = camelcase($basename);
 
-        $configDirs = [
-            PATH_REACTOR . 'Config' . DIRECTORY_SEPARATOR,
-            PATH_APP . 'Config' . DIRECTORY_SEPARATOR,
-        ];
-
-        foreach ($configDirs as $configDir) {
+        foreach ($this->filePaths as $configFilePath) {
             if (is_file(
-                $filePath = $configDir . ucfirst(
+                $filePath = $configFilePath . ucfirst(
                         strtolower(ENVIRONMENT)
                     ) . DIRECTORY_SEPARATOR . $configFile . '.php'
             )) {
                 include($filePath);
-            } elseif (is_file($filePath = $configDir . DIRECTORY_SEPARATOR . $configFile . '.php')) {
+            } elseif (is_file($filePath = $configFilePath . DIRECTORY_SEPARATOR . $configFile . '.php')) {
                 include($filePath);
             }
         }
 
         if (isset($$offset)) {
+            if ( ! in_array($offset, $this->loaded)) {
+                array_push($this->loaded, $offset);
+            }
+
             $this->addItem($offset, $$offset);
 
             unset($$offset);
@@ -154,5 +147,19 @@ class Config extends Environment
     public function setItem($offset, $value)
     {
         $this->offsetSet($offset, $value);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Config::reload
+     */
+    public function reload()
+    {
+        if(count($this->loaded)) {
+            foreach($this->loaded as $filename) {
+                $this->loadFile($filename);
+            }
+        }
     }
 }

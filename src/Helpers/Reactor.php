@@ -275,3 +275,31 @@ if ( ! function_exists('controller')) {
         return false;
     }
 }
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('commander')) {
+    /**
+     * commander
+     *
+     * Convenient shortcut for O2System Framework Commander service.
+     *
+     * @return O2System\Framework\Http\Controller|bool
+     */
+    function commander()
+    {
+        if(services()->has('commander')) {
+            $args = func_get_args();
+
+            if (count($args)) {
+                $commander = services()->get('commander');
+
+                return call_user_func_array([&$commander, '__call'], $args);
+            }
+
+            return services('commander');
+        }
+
+        return false;
+    }
+}

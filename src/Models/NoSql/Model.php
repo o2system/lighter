@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -78,13 +78,13 @@ class Model
     /**
      * Model Result
      *
-     * @var \O2System\Framework\Models\Sql\DataObjects\Result
+     * @var \O2System\Reactor\Models\Sql\DataObjects\Result
      */
     public $result;
     /**
      * Model Result Row
      *
-     * @var \O2System\Framework\Models\Sql\DataObjects\Result\Row
+     * @var \O2System\Reactor\Models\Sql\DataObjects\Result\Row
      */
     public $row;
     /**
@@ -121,6 +121,8 @@ class Model
         $this->fetchSubModels();
     }
 
+    // ------------------------------------------------------------------------
+
     /**
      * AbstractModel::fetchSubModels
      *
@@ -128,6 +130,7 @@ class Model
      * @final   this method cannot be overwritten.
      *
      * @return void
+     * @throws \ReflectionException
      */
     final protected function fetchSubModels()
     {

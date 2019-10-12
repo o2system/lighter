@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -249,7 +249,8 @@ class Options extends Model
                      'UNPUBLISH',
                      'DRAFT',
                      'ARCHIVED',
-                     'TRASH',
+                     'DELETED',
+                     'LOCKED'
                  ] as $status
         ) {
             $statuses[ $status ] = $this->language->getLine($status);
@@ -270,8 +271,10 @@ class Options extends Model
 
         foreach ([
                      'PUBLIC',
+                     'PROTECTED',
                      'PRIVATE',
-                     'MEMBER',
+                     'READONLY',
+                     'MEMBERONLY',
                  ] as $visibility
         ) {
             $visibilities[ $visibility ] = $this->language->getLine($visibility);
@@ -296,5 +299,17 @@ class Options extends Model
         }
 
         return $languages;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Options::languages
+     *
+     * @return array
+     */
+    public function timezones()
+    {
+        return timezone_identifiers_list();
     }
 }

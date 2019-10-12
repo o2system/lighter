@@ -67,7 +67,9 @@ class Models extends SplServiceContainer
     public function load($model, $offset = null)
     {
         if (is_string($model)) {
-            $service = new SplServiceRegistry($model);
+            if (class_exists($model)) {
+                $service = new SplServiceRegistry($model);
+            }
         } elseif ($model instanceof SplServiceRegistry) {
             $service = $model;
         }
@@ -96,9 +98,9 @@ class Models extends SplServiceContainer
                 ? $offset
                 : camelcase($service->getParameter());
 
-            if ($service->isSubclassOf('O2System\Framework\Models\Sql\Model') ||
-                $service->isSubclassOf('O2System\Framework\Models\NoSql\Model') ||
-                $service->isSubclassOf('O2System\Framework\Models\Files\Model')
+            if ($service->isSubclassOf('O2System\Reactor\Models\Sql\Model') ||
+                $service->isSubclassOf('O2System\Reactor\Models\NoSql\Model') ||
+                $service->isSubclassOf('O2System\Reactor\Models\Files\Model')
             ) {
                 $this->attach($offset, $service);
 
@@ -114,7 +116,7 @@ class Models extends SplServiceContainer
     /**
      * Models::add
      *
-     * @param \O2System\Framework\Models\Sql\Model|\O2System\Framework\Models\NoSql\Model|\O2System\Framework\Models\Files\Model $model
+     * @param \O2System\Reactor\Models\Sql\Model|\O2System\Reactor\Models\NoSql\Model|\O2System\Reactor\Models\Files\Model $model
      * @param null                                                                                                               $offset
      */
     public function add($model, $offset = null)
@@ -130,5 +132,50 @@ class Models extends SplServiceContainer
         }
 
         $this->register($model, $offset);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Models::autoload
+     *
+     * @param string      $model
+     * @param string|null $offset
+     *
+     * @return mixed
+     */
+    public function autoload($model, $offset = null)
+    {
+        if (isset($offset)) {
+            if ($this->has($offset)) {
+                return $this->get($offset);
+            }
+
+            // Try to load
+            if (is_string($model)) {
+                if ($this->has($model)) {
+                    return $this->get($model);
+                }
+
+                $this->load($model, $offset);
+
+                if ($this->has($offset)) {
+                    return $this->get($offset);
+                }
+            }
+        } elseif (is_string($model)) {
+            if ($this->has($model)) {
+                return $this->get($model);
+            }
+
+            // Try to load
+            $this->load($model, $model);
+
+            if ($this->has($model)) {
+                return $this->get($model);
+            }
+        }
+
+        return false;
     }
 }

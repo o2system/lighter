@@ -21,5 +21,36 @@ namespace O2System\Reactor\Cli;
  */
 class Commander extends \O2System\Kernel\Cli\Commander
 {
+    /**
+     * Controller::__get
+     *
+     * Magic method __get.
+     *
+     * @param string $property
+     *
+     * @return mixed
+     */
+    public function &__get($property)
+    {
+        $get[ $property ] = false;
 
+        // CodeIgniter property aliasing
+        if ($property === 'load') {
+            $property = 'loader';
+        }
+
+        if (services()->has($property)) {
+            $get[ $property ] = services()->get($property);
+        } elseif (o2system()->__isset($property)) {
+            $get[ $property ] = o2system()->__get($property);
+        } elseif ($property === 'models') {
+            $get[ $property ] = models();
+        } elseif ($property === 'model') {
+            $get[ $property ] = models('controller');
+        } elseif ($property === 'services' || $property === 'libraries') {
+            $get[ $property ] = services();
+        }
+
+        return $get[ $property ];
+    }
 }

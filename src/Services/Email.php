@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -10,7 +10,7 @@
  */
 
 
-namespace O2System\Reactor\Libraries;
+namespace O2System\Reactor\Services;
 
 
 use O2System\Email\DataStructures\Config;
@@ -21,7 +21,7 @@ use O2System\Spl\Traits\Collectors\ErrorCollectorTrait;
 
 /**
  * Class Email
- * @package O2System\Reactor\Libraries
+ * @package O2System\Reactor\Services
  */
 class Email extends Message
 {

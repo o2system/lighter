@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -11,14 +11,14 @@
 
 // ------------------------------------------------------------------------
 
-namespace O2System\Reactor\Libraries;
+namespace O2System\Reactor\Services;
 
 // ------------------------------------------------------------------------
 
 /**
  * Class License
  *
- * @package O2System\Reactor\Libraries
+ * @package O2System\Reactor\Services
  */
 class License
 {

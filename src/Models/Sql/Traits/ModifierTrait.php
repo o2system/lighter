@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -14,6 +14,10 @@
 namespace O2System\Reactor\Models\Sql\Traits;
 
 // ------------------------------------------------------------------------
+use O2System\Reactor\Libraries\Ui\Contents\Lists\Unordered;
+use O2System\Reactor\Models\Sql\DataObjects\Result;
+use O2System\Reactor\Models\Sql\DataObjects\Result\Row;
+use O2System\Image\Uploader;
 
 /**
  * Class TraitModifier
@@ -23,43 +27,218 @@ namespace O2System\Reactor\Models\Sql\Traits;
 trait ModifierTrait
 {
     /**
-     * Insert Data
+     * ModifierTrait::insert
      *
-     * Method to input data as well as equipping the data in accordance with the fields
-     * in the destination database table.
+     * @param array $sets
      *
-     * @access  public
-     *
-     * @param   array  $sets  Array of Input Data
-     * @param   string $table Table Name
-     *
-     * @return mixed
-     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
      */
-    public function insert(array $sets, $table = null)
+    public function insert(array $sets)
     {
-        $table = isset($table) ? $table : $this->table;
+        if (count($sets)) {
+            if (count($this->fillableColumns)) {
+                foreach ($sets as $key => $value) {
+                    if ( ! in_array($key, $this->fillableColumns)) {
+                        unset($sets[ $key ]);
+                    }
+                }
+            }
 
-        if (method_exists($this, 'insertRecordSets')) {
-            $this->insertRecordSets($sets);
-        }
+            if (method_exists($this, 'insertRecordSets')) {
+                $this->insertRecordSets($sets);
+            }
 
-        if (method_exists($this, 'beforeInsert')) {
-            $this->beforeInsert($sets);
-        }
+            if (method_exists($this, 'beforeInsert')) {
+                $this->beforeInsert($sets);
+            }
 
-        if (method_exists($this, 'getRecordOrdering')) {
-            if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
-                $sets[ 'record_ordering' ] = $this->getRecordOrdering($table);
+            if (method_exists($this, 'getRecordOrdering')) {
+                if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
+                    $sets[ 'record_ordering' ] = $this->getRecordOrdering();
+                }
+            }
+
+            if (isset($this->uploadedImageFilePath)) {
+                if ( ! file_exists($this->uploadedImageFilePath)) {
+                    mkdir($this->uploadedImageFilePath, 0777, true);
+                }
+
+                $upload = new Uploader();
+                $upload->setPath($this->uploadedImageFilePath);
+
+                if ($files = input()->files()) {
+                    // Uploaded Image Process
+                    if (isset($this->uploadedImageKey)) {
+                        if (isset($files[ $this->uploadedImageKey ])) {
+                            $upload->process($this->uploadedImageKey);
+
+                            if ($upload->getErrors()) {
+                                $errors = new Unordered();
+
+                                foreach ($upload->getErrors() as $code => $error) {
+                                    $errors->createList($error);
+                                }
+
+                                if (services()->has('session')) {
+                                    session()->setFlash('danger', $errors);
+                                }
+
+                                return false;
+                            }
+                        }
+                    } elseif (count($this->uploadedImageKeys)) {
+                        foreach ($this->uploadedImageKeys as $uploadedImageKey) {
+                            if (isset($files[ $uploadedImageKey ])) {
+                                $upload->process($uploadedImageKey);
+
+                                if ($upload->getErrors()) {
+                                    $errors = new Unordered();
+
+                                    foreach ($upload->getErrors() as $code => $error) {
+                                        $errors->createList($error);
+                                    }
+
+                                    if (services()->has('session')) {
+                                        session()->setFlash('danger', $errors);
+                                    }
+
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+
+                    // Uploaded File Process
+                    if (isset($this->uploadedFileFilepath)) {
+                        if (isset($files[ $this->uploadedFileKey ])) {
+                            $upload->process($this->uploadedFileKey);
+
+                            if ($upload->getErrors()) {
+                                $errors = new Unordered();
+
+                                foreach ($upload->getErrors() as $code => $error) {
+                                    $errors->createList($error);
+                                }
+
+                                if (services()->has('session')) {
+                                    session()->setFlash('danger', $errors);
+                                }
+
+                                return false;
+                            }
+                        }
+                    } elseif (count($this->uploadedFileKeys)) {
+                        foreach ($this->uploadedFileKeys as $uploadedFileKey) {
+                            if (isset($files[ $uploadedFileKey ])) {
+                                $upload->process($uploadedFileKey);
+
+                                if ($upload->getErrors()) {
+                                    $errors = new Unordered();
+
+                                    foreach ($upload->getErrors() as $code => $error) {
+                                        $errors->createList($error);
+                                    }
+
+                                    if (services()->has('session')) {
+                                        session()->setFlash('danger', $errors);
+                                    }
+
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if ($this->qb->table($this->table)->insert($sets)) {
+                if (method_exists($this, 'afterInsert')) {
+                    $this->afterInsert();
+                }
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                $label = false;
+                foreach (['name', 'label', 'title', 'code'] as $labelField) {
+                    if (isset($sets[ $labelField ])) {
+                        if(services()->has('session')) {
+                            session()->setFlash('success', language('SUCCESS_INSERT_WITH_LABEL', [$sets[ $labelField ]]));
+                        }
+
+                        $label = true;
+                        break;
+                    }
+                }
+
+                if ($label === false) {
+                    if(services()->has('session')) {
+                        session()->setFlash('success', language('SUCCESS_INSERT'));
+                    }
+                }
+
+                return true;
             }
         }
 
-        if ($this->qb->table($table)->insert($sets)) {
-            if (method_exists($this, 'afterInsert')) {
-                return $this->afterInsert();
+        $label = false;
+        foreach (['name', 'label', 'title', 'code'] as $labelField) {
+            if (isset($sets[ $labelField ])) {
+                if(services()->has('session')) {
+                    session()->setFlash('danger', language('FAILED_INSERT_WITH_LABEL', [$sets[ $labelField ]]));
+                }
+
+                $label = true;
+                break;
+            }
+        }
+
+        if ($label === false) {
+            if(services()->has('session')) {
+                session()->setFlash('danger', language('FAILED_INSERT'));
+            }
+        }
+
+        // Sets Global $_POST Variable
+        $_POST = $sets;
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::insertOrUpdate
+     *
+     * @param array $sets
+     * @param array $conditions
+     *
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     */
+    public function insertOrUpdate(array $sets, array $conditions = [])
+    {
+        if (count($sets)) {
+            $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
+
+            if (empty($conditions)) {
+                if (isset($sets[ $primaryKey ])) {
+                    $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                } else {
+                    $conditions = $sets;
+                }
             }
 
-            return true;
+            // Try to find
+            if ($result = $this->qb->from($this->table)->getWhere($conditions)) {
+                if ($result->count() > 0) {
+                    return $this->update($sets, $conditions);
+                } else {
+                    return $this->insert($sets);
+                }
+            }
         }
 
         return false;
@@ -68,87 +247,41 @@ trait ModifierTrait
     // ------------------------------------------------------------------------
 
     /**
-     * Update Data
+     * ModifierTrait::insertMany
      *
-     * Method to update data as well as equipping the data in accordance with the fields
-     * in the destination database table.
+     * @param array $sets
      *
-     * @access  public
-     *
-     * @param   string $table Table Name
-     * @param   array  $sets  Array of Update Data
-     *
-     * @return mixed
+     * @return bool|int
      */
-    public function update(array $sets, $where = [], $table = null)
-    {
-        $table = isset($table) ? $table : $this->table;
-        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
-
-        if (empty($where)) {
-            if (empty($this->primaryKeys)) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
-            } else {
-                foreach ($this->primaryKeys as $primaryKey) {
-                    $where[ $primaryKey ] = $sets[ $primaryKey ];
-                }
-            }
-        }
-
-        // Reset Primary Keys
-        $this->primaryKey = 'id';
-        $this->primaryKeys = [];
-
-        if (method_exists($this, 'updateRecordSets')) {
-            $this->updateRecordSets($sets);
-        }
-
-        if (method_exists($this, 'beforeUpdate')) {
-            $sets = $this->beforeUpdate($sets);
-        }
-
-        if (method_exists($this, 'getRecordOrdering')) {
-            if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
-                $sets[ 'record_ordering' ] = $this->getRecordOrdering($table);
-            }
-        }
-
-        if ($this->qb->table($table)->update($sets, $where)) {
-
-            if (method_exists($this, 'afterUpdate')) {
-                return $this->afterUpdate();
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
     public function insertMany(array $sets)
     {
-        $table = isset($table) ? $table : $this->table;
-
-        if (method_exists($this, 'insertRecordSets')) {
-            foreach ($sets as $set) {
-                $this->insertRecordSets($set);
-
-                if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
-                    $set[ 'record_ordering' ] = $this->getRecordOrdering($table);
+        if (count($sets)) {
+            if (method_exists($this, 'insertRecordSets')) {
+                foreach ($sets as $set) {
+                    $this->insertRecordSets($set);
+                    if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
+                        $set[ 'record_ordering' ] = $this->getRecordOrdering();
+                    }
                 }
             }
-        }
 
-        if (method_exists($this, 'beforeInsertMany')) {
-            $this->beforeInsertMany($sets);
-        }
-
-        if ($this->qb->table($table)->insertBatch($sets)) {
-            if (method_exists($this, 'afterInsertMany')) {
-                return $this->afterInsertMany();
+            if (method_exists($this, 'beforeInsertMany')) {
+                $this->beforeInsertMany($sets);
             }
 
-            return true;
+            if ($this->qb->table($this->table)->insertBatch($sets)) {
+                if (method_exists($this, 'afterInsertMany')) {
+                    $this->afterInsertMany();
+                }
+
+                $affectedRows = $this->db->getAffectedRows();
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                return $affectedRows;
+            }
         }
 
         return false;
@@ -156,32 +289,280 @@ trait ModifierTrait
 
     // ------------------------------------------------------------------------
 
-    public function updateMany(array $sets)
+    /**
+     * ModifierTrait::insertIfNotExists
+     *
+     * @param array $sets
+     * @param array $conditions
+     *
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     */
+    public function insertIfNotExists(array $sets, array $conditions = [])
     {
-        $table = isset($table) ? $table : $this->table;
-        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
+        if (empty($conditions)) {
+            $conditions = $sets;
+        }
 
-        $where = [];
-        if (empty($this->primaryKeys)) {
-            $where[ $primaryKey ] = $sets[ $primaryKey ];
-            $this->qb->where($primaryKey, $sets[ $primaryKey ]);
-        } else {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
+        if (count($sets)) {
+            if ($result = $this->qb->from($this->table)->getWhere($conditions)) {
+                if ($result->count() == 0) {
+                    return $this->insert($sets);
+                }
             }
         }
 
-        // Reset Primary Keys
-        $this->primaryKey = 'id';
-        $this->primaryKeys = [];
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::update
+     *
+     * @param array $sets
+     * @param array $conditions
+     *
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     */
+    public function update(array $sets, array $conditions = [])
+    {
+        if (count($sets)) {
+            $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
+
+            if (empty($conditions)) {
+                if (isset($sets[ $primaryKey ])) {
+                    $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                }
+            }
+
+            if (count($this->fillableColumns)) {
+                foreach ($sets as $key => $value) {
+                    if ( ! in_array($key, $this->fillableColumns)) {
+                        unset($sets[ $key ]);
+                    }
+                }
+            }
+
+            if (method_exists($this, 'updateRecordSets')) {
+                $this->updateRecordSets($sets);
+            }
+
+            if (method_exists($this, 'beforeUpdate')) {
+                $sets = $this->beforeUpdate($sets);
+            }
+
+            if (method_exists($this, 'getRecordOrdering')) {
+                if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
+                    $sets[ 'record_ordering' ] = $this->getRecordOrdering();
+                }
+            }
+
+            if ($row = $this->findWhere($conditions)) {
+                if (isset($this->uploadedImageFilePath)) {
+                    if ( ! file_exists($this->uploadedImageFilePath)) {
+                        mkdir($this->uploadedImageFilePath, 0777, true);
+                    }
+
+                    $upload = new Uploader();
+                    $upload->setPath($this->uploadedImageFilePath);
+
+                    if ($files = input()->files()) {
+                        // Uploaded Image Process
+                        if (isset($this->uploadedImageKey)) {
+                            if (isset($files[ $this->uploadedImageKey ])) {
+                                $upload->process($this->uploadedImageKey);
+
+                                if ($upload->getErrors()) {
+                                    $errors = new Unordered();
+
+                                    foreach ($upload->getErrors() as $code => $error) {
+                                        $errors->createList($error);
+                                    }
+
+                                    if (services()->has('session')) {
+                                        session()->setFlash('danger', $errors);
+                                    }
+
+                                    return false;
+                                } elseif ($row->offsetGet($this->uploadedImageKey) !== $upload->getUploadedFiles()->first()[ 'name' ]) {
+                                    $sets[ $this->uploadedImageKey ] = $upload->getUploadedFiles()->first()[ 'name' ];
+
+                                    if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($this->uploadedImageKey))) {
+                                        unlink($filePath);
+                                    }
+                                }
+                            }
+                        } elseif (count($this->uploadedImageKeys)) {
+                            foreach ($this->uploadedImageKeys as $uploadedImageKey) {
+                                if (isset($files[ $uploadedImageKey ])) {
+                                    $upload->process($uploadedImageKey);
+
+                                    if ($upload->getErrors()) {
+                                        $errors = new Unordered();
+
+                                        foreach ($upload->getErrors() as $code => $error) {
+                                            $errors->createList($error);
+                                        }
+
+                                        if (services()->has('session')) {
+                                            session()->setFlash('danger', $errors);
+                                        }
+
+                                        return false;
+                                    } elseif ($row->offsetGet($uploadedImageKey) !== $upload->getUploadedFiles()->first()[ 'name' ]) {
+                                        $sets[ $uploadedImageKey ] = $upload->getUploadedFiles()->first()[ 'name' ];
+
+                                        if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($uploadedImageKey))) {
+                                            unlink($filePath);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        // Uploaded File Process
+                        if (isset($this->uploadedFileFilepath)) {
+                            if (isset($files[ $this->uploadedFileKey ])) {
+                                $upload->process($this->uploadedFileKey);
+
+                                if ($upload->getErrors()) {
+                                    $errors = new Unordered();
+
+                                    foreach ($upload->getErrors() as $code => $error) {
+                                        $errors->createList($error);
+                                    }
+
+                                    if (services()->has('session')) {
+                                        session()->setFlash('danger', $errors);
+                                    }
+
+                                    return false;
+                                } elseif ($row->offsetGet($this->uploadedFileKey) !== $upload->getUploadedFiles()->first()[ 'name' ]) {
+                                    $sets[ $this->uploadedFileKey ] = $upload->getUploadedFiles()->first()[ 'name' ];
+
+                                    if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($this->uploadedFileKey))) {
+                                        unlink($filePath);
+                                    }
+                                }
+                            }
+                        } elseif (count($this->uploadedFileKeys)) {
+                            foreach ($this->uploadedFileKeys as $uploadedFileKey) {
+                                if (isset($files[ $uploadedFileKey ])) {
+                                    $upload->process($uploadedFileKey);
+
+                                    if ($upload->getErrors()) {
+                                        $errors = new Unordered();
+
+                                        foreach ($upload->getErrors() as $code => $error) {
+                                            $errors->createList($error);
+                                        }
+
+                                        if (services()->has('session')) {
+                                            session()->setFlash('danger', $errors);
+                                        }
+
+                                        return false;
+                                    } elseif ($row->offsetGet($uploadedFileKey) !== $upload->getUploadedFiles()->first()[ 'name' ]) {
+                                        $sets[ $uploadedFileKey ] = $upload->getUploadedFiles()->first()[ 'name' ];
+
+                                        if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($uploadedFileKey))) {
+                                            unlink($filePath);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if ($this->qb->table($this->table)->update($sets, $conditions)) {
+
+                    if (method_exists($this, 'afterUpdate')) {
+                        $this->afterUpdate();
+                    }
+
+                    $label = false;
+                    foreach (['name', 'label', 'title', 'code'] as $labelField) {
+                        if (isset($sets[ $labelField ])) {
+                            if(services()->has('session')) {
+                                session()->setFlash('success',
+                                    language('SUCCESS_UPDATE_WITH_LABEL', [$sets[ $labelField ]]));
+                            }
+
+                            $label = true;
+                            break;
+                        }
+                    }
+
+                    if ($label === false) {
+                        if(services()->has('session')) {
+                            session()->setFlash('success', language('SUCCESS_UPDATE'));
+                        }
+                    }
+
+                    return true;
+                }
+            }
+        }
+
+        $label = false;
+        foreach (['name', 'label', 'title', 'code'] as $labelField) {
+            if (isset($sets[ $labelField ])) {
+                if(services()->has('session')) {
+                    session()->setFlash('danger', language('FAILED_UPDATE_WITH_LABEL', [$sets[ $labelField ]]));
+                }
+
+                $label = true;
+                break;
+            }
+        }
+
+        if ($label === false) {
+            if(services()->has('session')) {
+                session()->setFlash('danger', language('FAILED_UPDATE'));
+            }
+        }
+
+        // Sets Global $_POST Variable
+        $_POST = $sets;
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::updateOrInsert
+     *
+     * @param array $sets
+     * @param array $conditions
+     *
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     */
+    public function updateOrInsert(array $sets, array $conditions = [])
+    {
+        return $this->insertOrUpdate($sets, $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::updateMany
+     *
+     * @param array $sets
+     *
+     * @return bool|array
+     */
+    public function updateMany(array $sets)
+    {
+        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
 
         if (method_exists($this, 'updateRecordSets')) {
-            foreach ($sets as $set) {
-                $this->updateRecordSets($set);
-
-                if ($this->recordOrdering === true && empty($sets[ 'record_ordering' ])) {
-                    $set[ 'record_ordering' ] = $this->getRecordOrdering($table);
-                }
+            foreach ($sets as $key => $set) {
+                $this->updateRecordSets($sets[ $key ]);
             }
         }
 
@@ -189,12 +570,18 @@ trait ModifierTrait
             $this->beforeUpdateMany($sets);
         }
 
-        if ($this->qb->table($table)->updateBatch($sets, $where)) {
+        if ($this->qb->table($this->table)->updateBatch($sets, $primaryKey)) {
             if (method_exists($this, 'afterUpdateMany')) {
                 return $this->afterUpdateMany();
             }
 
-            return true;
+            $affectedRows = $this->db->getAffectedRows();
+
+            if (method_exists($this, 'rebuildTree')) {
+                $this->rebuildTree();
+            }
+
+            return $affectedRows;
         }
 
         return false;
@@ -203,138 +590,70 @@ trait ModifierTrait
     // ------------------------------------------------------------------------
 
     /**
-     * trash
+     * ModifierTrait::delete
      *
-     * @param      $id
-     * @param null $table
+     * @param int|Row $id
      *
-     * @return array|bool
+     * @return bool
+     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function trash($id, $table = null)
+    public function delete($id)
     {
-        $table = isset($table) ? $table : $this->table;
-        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
-
-        $sets = [];
-        $where = [];
-
-        if (empty($this->primaryKeys)) {
-            $where[ $primaryKey ] = $id;
-            $sets[ $primaryKey ] = $id;
-        } elseif (is_array($id)) {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
-                $sets[ $primaryKey ] = $id[ $primaryKey ];
-            }
-        } else {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
-            }
-
-            $sets[ reset($this->primaryKeys) ] = $id;
-        }
-
-        // Reset Primary Keys
-        $this->primaryKey = 'id';
-        $this->primaryKeys = [];
-
-        if (method_exists($this, 'updateRecordSets')) {
-            $this->setRecordStatus('TRASH');
-            $this->updateRecordSets($sets);
-        }
-
-        if (method_exists($this, 'beforeTrash')) {
-            $this->beforeTrash($sets);
-        }
-
-        if ($this->qb->table($table)->update($sets, $where)) {
-            if (method_exists($this, 'afterTrash')) {
-                return $this->afterTrash();
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    // ------------------------------------------------------------------------
-
-    public function trashBy($id, array $where = [], $table = null)
-    {
-        $this->qb->where($where);
-
-        return $this->trash($id, $table);
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Trash many rows from the database table based on sets of ids.
-     *
-     * @param array $ids
-     *
-     * @return mixed
-     */
-    public function trashMany(array $ids)
-    {
-        $affectedRows = [];
-
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->trash($id);
-        }
-
-        return $affectedRows;
-    }
-
-    // ------------------------------------------------------------------------
-
-    public function trashManyBy(array $ids, $where = [], $table = null)
-    {
-        $affectedRows = [];
-
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->trashBy($id, $where, $table);
-        }
-
-        return $affectedRows;
-    }
-
-    // ------------------------------------------------------------------------
-
-    public function delete($id, $force = false, $table = null)
-    {
-        if ((isset($table) AND is_bool($table)) OR ! isset($table)) {
-            $table = $this->table;
-        }
-
-        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
-
-        $where = [];
-        if (empty($this->primaryKeys)) {
-            $where[ $primaryKey ] = $id;
-        } elseif (is_array($id)) {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $id[ $primaryKey ];
-            }
-        } else {
-            $where[ reset($this->primaryKeys) ] = $id;
-        }
-
-        // Reset Primary Keys
-        $this->primaryKey = 'id';
-        $this->primaryKeys = [];
-
         if (method_exists($this, 'beforeDelete')) {
             $this->beforeDelete();
         }
 
-        if ($this->qb->table($table)->delete($where)) {
-            if (method_exists($this, 'afterDelete')) {
-                return $this->afterDelete();
+        if ($id instanceof Row) {
+            $row = $id;
+        } else {
+            $row = $this->find($id);
+        }
+
+        // Delete Files
+        if ($row instanceof Row) {
+            if (isset($this->uploadedImageFilePath)) {
+
+                // Remove Uploaded Image
+                if ($this->uploadedImageKey) {
+                    if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($this->uploadedImageKey))) {
+                        unlink($filePath);
+                    }
+                } elseif (count($this->uploadedImageKeys)) {
+                    foreach ($this->uploadedImageKeys as $uploadedImageKey) {
+                        if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($uploadedImageKey))) {
+                            unlink($filePath);
+                        }
+                    }
+                }
+
+                // Remove Uploaded File
+                if ($this->uploadedFileFilepath) {
+                    if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($this->uploadedFileKey))) {
+                        unlink($filePath);
+                    }
+                } elseif (count($this->uploadedFileKeys)) {
+                    foreach ($this->uploadedFileKeys as $uploadedFileKey) {
+                        if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($uploadedFileKey))) {
+                            unlink($filePath);
+                        }
+                    }
+                }
             }
 
-            return true;
+            if ( ! $id instanceof Row) {
+                if ($row->delete()) {
+                    if (method_exists($this, 'afterDelete')) {
+                        $this->afterDelete();
+                    }
+
+                    if (method_exists($this, 'rebuildTree')) {
+                        $this->rebuildTree();
+                    }
+                }
+            }
+
+            return $row->delete();
         }
 
         return false;
@@ -342,79 +661,141 @@ trait ModifierTrait
 
     // ------------------------------------------------------------------------
 
-    public function deleteBy($id, $where = [], $force = false, $table = null)
+    /**
+     * ModifierTrait::deleteBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    public function deleteBy($conditions = [])
     {
-        $this->qb->where($where);
+        if (count($conditions)) {
+            if (method_exists($this, 'beforeDelete')) {
+                $this->beforeDelete();
+            }
 
-        return $this->delete($id, $force, $table);
+            $affectedRows = 0;
+            if ($result = $this->findWhere($conditions)) {
+                if ($result instanceof Result) {
+                    foreach ($result as $row) {
+                        if ($this->delete($row)) {
+                            $affectedRows++;
+                        }
+                    }
+                } elseif ($result instanceof Row) {
+                    if ($this->delete($result)) {
+                        $affectedRows++;
+                    }
+                }
+            }
+
+            if ($affectedRows > 0) {
+                if (method_exists($this, 'afterDelete')) {
+                    $this->afterDelete();
+                }
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                return $affectedRows;
+            }
+        }
+
+        return false;
     }
 
     // ------------------------------------------------------------------------
 
-    public function deleteMany(array $ids, $force = false, $table = null)
+    /**
+     * ModifierTrait::deleteMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    public function deleteMany(array $ids)
     {
-        $affectedRows = [];
-
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->delete($id, $force, $table);
+        if (method_exists($this, 'beforeDelete')) {
+            $this->beforeDelete();
         }
 
-        return $affectedRows;
-    }
-
-    public function deleteManyBy(array $ids, $where = [], $force = false, $table = null)
-    {
-        $affectedRows = [];
-
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->deleteBy($id, $where, $force, $table);
+        $affectedRows = 0;
+        if ($result = $this->findIn($ids)) {
+            foreach ($result as $row) {
+                if ($this->delete($row)) {
+                    $affectedRows++;
+                }
+            }
         }
 
-        return $affectedRows;
+        if ($affectedRows > 0) {
+            if (method_exists($this, 'afterDelete')) {
+                $this->afterDelete();
+            }
+
+            if (method_exists($this, 'rebuildTree')) {
+                $this->rebuildTree();
+            }
+
+            return $affectedRows;
+        }
+
+        return false;
     }
 
     // ------------------------------------------------------------------------
 
-    public function publish($id, $table = null)
+    /**
+     * ModifierTrait::deleteManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    public function deleteManyBy($conditions = [])
     {
-        $table = isset($table) ? $table : $this->table;
+        return $this->deleteBy($conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::updateRecordStatus
+     *
+     * @param int    $id
+     * @param string $recordStatus
+     * @param string $method
+     *
+     * @return bool
+     */
+    private function updateRecordStatus($id, $recordStatus, $method)
+    {
+        $sets[ 'record_status' ] = $recordStatus;
         $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
 
-        $sets = [];
-        $where = [];
-
-        if (empty($this->primaryKeys)) {
-            $where[ $primaryKey ] = $id;
-            $sets[ $primaryKey ] = $id;
-        } elseif (is_array($id)) {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
-                $sets[ $primaryKey ] = $id[ $primaryKey ];
-            }
-        } else {
-            foreach ($this->primaryKeys as $primaryKey) {
-                $where[ $primaryKey ] = $sets[ $primaryKey ];
-            }
-
-            $sets[ reset($this->primaryKeys) ] = $id;
-        }
-
-        // Reset Primary Keys
-        $this->primaryKey = 'id';
-        $this->primaryKeys = [];
-
         if (method_exists($this, 'updateRecordSets')) {
-            $this->setRecordStatus('PUBLISH');
             $this->updateRecordSets($sets);
         }
 
-        if (method_exists($this, 'beforePublish')) {
-            $this->beforePublish($sets);
+        if (method_exists($this, $beforeMethod = 'before' . ucfirst($method))) {
+            call_user_func_array([&$this, $beforeMethod], [$sets]);
         }
 
-        if ($this->qb->table($table)->update($sets, $where)) {
-            if (method_exists($this, 'afterPublish')) {
-                return $this->afterPublish();
+        if ($this->qb->table($this->table)->limit(1)->update($sets, [$primaryKey => $id])) {
+            if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
+                call_user_func([&$this, $beforeMethod]);
+            }
+
+            if (method_exists($this, 'rebuildTree')) {
+                $this->rebuildTree();
             }
 
             return true;
@@ -425,64 +806,466 @@ trait ModifierTrait
 
     // ------------------------------------------------------------------------
 
-    public function publishBy($id, array $where = [], $table = null)
+    /**
+     * ModifierTrait::updateRecordStatusMany
+     *
+     * @param array  $ids
+     * @param string $recordStatus
+     * @param string $method
+     *
+     * @return bool|int
+     */
+    private function updateRecordStatusMany(array $ids, $recordStatus, $method)
     {
-        $this->qb->where($where);
+        if (count($ids)) {
+            $sets[ 'record_status' ] = $recordStatus;
+            $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
 
-        return $this->publish($id, $table);
-    }
+            $this->qb->whereIn($primaryKey, $ids);
 
-    // ------------------------------------------------------------------------
+            if (method_exists($this, 'updateRecordSets')) {
+                $this->updateRecordSets($sets);
+            }
 
-    public function publishMany(array $ids, $table = null)
-    {
-        $affectedRows = [];
+            if (method_exists($this, $beforeMethod = 'before' . ucfirst($method))) {
+                call_user_func_array([&$this, $beforeMethod], [$sets]);
+            }
 
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->publish($id, $table);
+            if ($this->qb->table($this->table)->update($sets)) {
+                if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
+                    call_user_func([&$this, $beforeMethod]);
+                }
+
+                $affectedRows = $this->db->getAffectedRows();
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                return $affectedRows;
+            }
         }
 
-        return $affectedRows;
+        return false;
     }
 
     // ------------------------------------------------------------------------
 
-    public function publishManyBy(array $ids, $where = [], $table = null)
+    /**
+     * ModifierTrait::updateRecordStatusBy
+     *
+     * @param string $recordStatus
+     * @param string $method
+     * @param array  $conditions
+     *
+     * @return bool|int
+     */
+    private function updateRecordStatusBy($recordStatus, $method, array $conditions)
     {
-        $affectedRows = [];
+        if (count($conditions)) {
+            $sets[ 'record_status' ] = $recordStatus;
 
-        foreach ($ids as $id) {
-            $affectedRows[ $id ] = $this->publishBy($id, $where, $table);
+            if (method_exists($this, 'updateRecordSets')) {
+                $this->updateRecordSets($sets);
+            }
+
+            if (method_exists($this, $beforeMethod = 'before' . ucfirst($method))) {
+                call_user_func_array([&$this, $beforeMethod], [$sets]);
+            }
+
+            if ($this->qb->table($this->table)->update($sets, $conditions)) {
+                if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
+                    call_user_func([&$this, $beforeMethod]);
+                }
+
+                $affectedRows = $this->db->getAffectedRows();
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                return $affectedRows;
+            }
         }
 
-        return $affectedRows;
+        return false;
     }
 
     // ------------------------------------------------------------------------
 
-    public function restore($id, $table = null)
+    /**
+     * ModifierTrait::updateRecordStatusManyBy
+     *
+     * @param string $recordStatus
+     * @param string $method
+     * @param array  $conditions
+     *
+     * @return bool|int
+     */
+    private function updateRecordStatusManyBy($recordStatus, $method, array $conditions)
     {
-        return $this->publish($id, $table);
+        if (count($conditions)) {
+            $sets[ 'record_status' ] = $recordStatus;
+
+            if (method_exists($this, 'updateRecordSets')) {
+                $this->updateRecordSets($sets);
+            }
+
+            if (method_exists($this, $beforeMethod = 'before' . ucfirst($method))) {
+                call_user_func_array([&$this, $beforeMethod], [$sets]);
+            }
+
+            if ($this->qb->table($this->table)->update($sets, $conditions)) {
+                if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
+                    call_user_func([&$this, $beforeMethod]);
+                }
+
+                $affectedRows = $this->db->getAffectedRows();
+
+                if (method_exists($this, 'rebuildTree')) {
+                    $this->rebuildTree();
+                }
+
+                return $affectedRows;
+            }
+        }
+
+        return false;
     }
 
     // ------------------------------------------------------------------------
 
-    public function restoreBy($id, array $where = [], $table = null)
+    /**
+     * ModifierTrait::publish
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function publish($id)
     {
-        return $this->publishBy($id, $where, $table);
+        return $this->updateRecordStatus($id, 'PUBLISH', 'publish');
     }
 
     // ------------------------------------------------------------------------
 
-    public function restoreMany(array $ids, $table = null)
+    /**
+     * ModifierTrait::publishBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function publishBy(array $conditions)
     {
-        return $this->publishMany($ids, $table);
+        return $this->updateRecordStatusBy('PUBLISH', 'publishBy', $conditions);
     }
 
     // ------------------------------------------------------------------------
 
-    public function restoreManyBy(array $ids, $where = [], $table = null)
+    /**
+     * ModifierTrait::publishMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function publishMany(array $ids)
     {
-        return $this->publishManyBy($ids, $where, $table);
+        return $this->updateRecordStatusMany($ids, 'PUBLISH', 'publishMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::publishManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function publishManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('PUBLISH', 'publishManyBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::restore
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function restore($id)
+    {
+        return $this->updateRecordStatus($id, 'PUBLISH', 'restore');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::restoreBy
+     *
+     * @param array $conditions
+     *
+     * @return bool
+     */
+    public function restoreBy(array $conditions)
+    {
+        return $this->updateRecordStatusBy('PUBLISH', 'restoreBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::restoreMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function restoreMany(array $ids)
+    {
+        return $this->updateRecordStatusMany($ids, 'PUBLISH', 'restoreMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::restoreManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function restoreManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('PUBLISH', 'restoreManyBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::unpublish
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function unpublish($id)
+    {
+        return $this->updateRecordStatus($id, 'UNPUBLISH', 'unpublish');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::unpublishBy
+     *
+     * @param array $conditions
+     *
+     * @return bool
+     */
+    public function unpublishBy(array $conditions)
+    {
+        return $this->updateRecordStatusBy('UNPUBLISH', 'unpublishBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::unpublishMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function unpublishMany(array $ids)
+    {
+        return $this->updateRecordStatusMany($ids, 'UNPUBLISH', 'unpublishMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::unpublishManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function unpublishManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('UNPUBLISH', 'unpublishManyBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::softDelete
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function softDelete($id)
+    {
+        return $this->updateRecordStatus($id, 'DELETED', 'softDelete');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::softDeleteBy
+     *
+     * @param array $conditions
+     *
+     * @return bool
+     */
+    public function softDeleteBy(array $conditions)
+    {
+        return $this->updateRecordStatusBy('DELETED', 'softDeleteBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::softDeleteMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function softDeleteMany(array $ids)
+    {
+        return $this->updateRecordStatusMany($ids, 'DELETED', 'softDeleteMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::softDeleteManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function softDeleteManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('DELETED', 'softDeleteManyBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::archive
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function archive($id)
+    {
+        return $this->updateRecordStatus($id, 'ARCHIVED', 'archive');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::archiveBy
+     *
+     * @param array $conditions
+     *
+     * @return bool
+     */
+    public function archiveBy(array $conditions)
+    {
+        return $this->updateRecordStatusBy('ARCHIVED', 'archiveBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::archiveMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function archiveMany(array $ids)
+    {
+        return $this->updateRecordStatusMany($ids, 'ARCHIVED', 'archiveMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::archiveManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function archiveManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('ARCHIVED', 'archiveManyBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::lock
+     *
+     * @param int $id
+     *
+     * @return bool
+     */
+    public function lock($id)
+    {
+        return $this->updateRecordStatus($id, 'LOCKED', 'lock');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::lockBy
+     *
+     * @param array $conditions
+     *
+     * @return bool
+     */
+    public function lockBy(array $conditions)
+    {
+        return $this->updateRecordStatusBy('LOCKED', 'lockBy', $conditions);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::lockMany
+     *
+     * @param array $ids
+     *
+     * @return bool|int
+     */
+    public function lockMany(array $ids)
+    {
+        return $this->updateRecordStatusMany($ids, 'LOCKED', 'lockMany');
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::lockManyBy
+     *
+     * @param array $conditions
+     *
+     * @return bool|int
+     */
+    public function lockManyBy(array $conditions)
+    {
+        return $this->updateRecordStatusManyBy('LOCKED', 'lockManyBy', $conditions);
     }
 }

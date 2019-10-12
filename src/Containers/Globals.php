@@ -17,7 +17,7 @@ namespace O2System\Reactor\Containers;
 
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use O2System\Psr\NotFoundExceptionInterface;
 use Traversable;
 
 /**
