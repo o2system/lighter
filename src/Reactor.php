@@ -305,7 +305,15 @@ class Reactor extends Kernel
                 if (profiler() !== false) {
                     profiler()->watch('Execute Requested Commander: ' . $commander->getClass());
                 }
-                $requestCommander->execute();
+                $requestMethod = $commander->getRequestMethod();
+                $requestMethodArgs = $commander->getRequestMethodArgs();
+
+                // Call the requested controller method
+                if (profiler() !== false) {
+                    profiler()->watch('Execute Requested Commander Method');
+                }
+
+                $requestCommander->__call($requestMethod, $requestMethodArgs);
 
                 exit(EXIT_SUCCESS);
             }
