@@ -352,7 +352,7 @@ class Reactor extends Kernel
             $modelClassName = str_replace('Controllers', 'Models', $controller->getName());
 
             if (class_exists($modelClassName)) {
-                $this->models->register($modelClassName, 'controller');
+                $this->models->load($modelClassName, 'controller');
             }
 
             if (profiler() !== false) {
