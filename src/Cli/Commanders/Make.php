@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,7 +15,7 @@ namespace O2System\Reactor\Cli\Commanders;
 
 // ------------------------------------------------------------------------
 
-use O2System\Kernel\Cli\Commander;
+use O2System\Reactor\Cli\Commander;
 
 /**
  * Class Make
@@ -119,7 +119,7 @@ class Make extends Commander
         $name = str_replace('.php', '', $name);
         $this->optionFilename = prepare_filename($name) . '.php';
 
-        $this->optionPath = empty($this->optionPath) ? modules()->current()->getRealPath() : $this->optionPath;
+        $this->optionPath = empty($this->optionPath) ? modules()->top()->getRealPath() : $this->optionPath;
     }
 
     // ------------------------------------------------------------------------

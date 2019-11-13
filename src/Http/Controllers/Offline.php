@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -14,7 +14,7 @@ namespace O2System\Reactor\Http\Controllers;
 
 // ------------------------------------------------------------------------
 
-use O2System\Reactor\Http\Controllers\Restful as Controller;
+use O2System\Reactor\Http\Controller;
 
 /**
  * Class Offline
@@ -38,6 +38,21 @@ class Offline extends Controller
      */
     public function index()
     {
-        $this->sendError(503, language('OFFLINE_MESSAGE'));
+        if (presenter()->theme) {
+            if (presenter()->theme->hasLayout('offline')) {
+                presenter()->theme->setLayout('offline');
+            }
+
+            if (false !== ($layout = presenter()->theme->getLayout())) {
+                if ($layout->getFilename() === 'theme') {
+                    presenter()->setTheme(false);
+                }
+            }
+        }
+
+        view('offline', [
+            'title' => language('OFFLINE_TITLE'),
+            'message' => language('OFFLINE_MESSAGE')
+        ]);
     }
 }

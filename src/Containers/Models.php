@@ -54,36 +54,6 @@ class Models extends SplServiceContainer
                 );
             }
         }
-
-        // Run models autoload
-        $this->autoload();
-    }
-
-    // ------------------------------------------------------------------------
-
-    private function autoload()
-    {
-        if (is_file(
-            $filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . ucfirst(
-                    strtolower(ENVIRONMENT)
-                ) . DIRECTORY_SEPARATOR . 'Models.php'
-        )) {
-            include($filePath);
-        } elseif (is_file($filePath = PATH_APP . 'Config' . DIRECTORY_SEPARATOR . 'Models.php')) {
-            include($filePath);
-        }
-
-        if (isset($models) AND is_array($models)) {
-            foreach ($models as $offset => $model) {
-                if (is_string($model)) {
-                    $this->load($model, $offset);
-                } elseif (is_object($model)) {
-                    $this->add($model);
-                }
-            }
-
-            unset($models);
-        }
     }
 
     // ------------------------------------------------------------------------
@@ -162,5 +132,50 @@ class Models extends SplServiceContainer
         }
 
         $this->register($model, $offset);
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Models::autoload
+     *
+     * @param string      $model
+     * @param string|null $offset
+     *
+     * @return mixed
+     */
+    public function autoload($model, $offset = null)
+    {
+        if (isset($offset)) {
+            if ($this->has($offset)) {
+                return $this->get($offset);
+            }
+
+            // Try to load
+            if (is_string($model)) {
+                if ($this->has($model)) {
+                    return $this->get($model);
+                }
+
+                $this->load($model, $offset);
+
+                if ($this->has($offset)) {
+                    return $this->get($offset);
+                }
+            }
+        } elseif (is_string($model)) {
+            if ($this->has($model)) {
+                return $this->get($model);
+            }
+
+            // Try to load
+            $this->load($model, $model);
+
+            if ($this->has($model)) {
+                return $this->get($model);
+            }
+        }
+
+        return false;
     }
 }

@@ -15,6 +15,7 @@ namespace O2System\Reactor\Containers;
 
 // ------------------------------------------------------------------------
 
+use O2System\Kernel\DataStructures\Input\Env;
 use O2System\Spl\DataStructures\SplArrayObject;
 use O2System\Spl\Traits\Collectors\FilePathCollectorTrait;
 
@@ -23,7 +24,7 @@ use O2System\Spl\Traits\Collectors\FilePathCollectorTrait;
  *
  * @package O2System\Reactor\Containers
  */
-class Config extends Environment
+class Config extends Env
 {
     use FilePathCollectorTrait;
 
@@ -44,6 +45,18 @@ class Config extends Environment
         $this->setFileDirName('Config');
         $this->addFilePath(PATH_REACTOR);
         $this->addFilePath(PATH_APP);
+
+        $this->loadFile('Config');
+
+        // Set default timezone
+        if (isset($this->storage[ 'datetime' ][ 'timezone' ])) {
+            date_default_timezone_set($this->storage[ 'datetime' ][ 'timezone' ]);
+        }
+
+        // Setup Language Ideom and Locale
+        if (isset($this->storage[ 'language' ])) {
+            language()->setDefault($this->storage[ 'language' ]);
+        }
     }
 
     // ------------------------------------------------------------------------
@@ -75,8 +88,12 @@ class Config extends Environment
                 include($filePath);
             }
         }
+        
+        if($offset === 'config') {
+            $this->exchangeArray($$offset);
 
-        if (isset($$offset)) {
+            return true;
+        } elseif (isset($$offset)) {
             if ( ! in_array($offset, $this->loaded)) {
                 array_push($this->loaded, $offset);
             }

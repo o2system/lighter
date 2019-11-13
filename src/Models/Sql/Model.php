@@ -15,7 +15,6 @@ namespace O2System\Reactor\Models\Sql;
 
 // ------------------------------------------------------------------------
 
-
 use O2System\Database\DataObjects\Result;
 use O2System\Reactor\Models\Sql\DataObjects\Result\Row;
 use O2System\Reactor\Models\Sql\Traits\FinderTrait;
@@ -271,7 +270,14 @@ class Model
         // Get model class directory name
         $dirName = dirname($filePath) . DIRECTORY_SEPARATOR;
 
-        if (is_dir($subModelsDirName = $dirName . $filename . DIRECTORY_SEPARATOR)) {
+        // Get sub models or siblings models
+        if ($filename === 'Model' || $filename === modules()->top()->getDirName()) {
+            $subModelsDirName = dirname($dirName) . DIRECTORY_SEPARATOR . 'Models' . DIRECTORY_SEPARATOR;
+
+            if (is_dir($subModelsDirName)) {
+                $subModelPath = $subModelsDirName;
+            }
+        } elseif (is_dir($subModelsDirName = $dirName . $filename . DIRECTORY_SEPARATOR)) {
             $subModelPath = $subModelsDirName;
         }
 

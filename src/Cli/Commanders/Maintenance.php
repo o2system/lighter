@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -16,7 +16,7 @@ namespace O2System\Reactor\Cli\Commanders;
 // ------------------------------------------------------------------------
 
 use O2System\Cache\Item;
-use O2System\Kernel\Cli\Commander;
+use O2System\Reactor\Cli\Commander;
 use O2System\Kernel\Cli\Writers\Format;
 
 /**
@@ -119,7 +119,7 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::optionSwitch
-     * 
+     *
      * @param string $switch
      */
     public function optionSwitch($switch)
@@ -135,7 +135,7 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::optionMode
-     * 
+     *
      * @param string $mode
      */
     public function optionMode($mode)
@@ -147,7 +147,7 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::optionLifetime
-     * 
+     *
      * @param int $lifetime
      */
     public function optionLifetime($lifetime)
@@ -159,7 +159,7 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::optionTitle
-     * 
+     *
      * @param string $title
      */
     public function optionTitle($title)
@@ -171,7 +171,7 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::optionMessage
-     * 
+     *
      * @param string $message
      */
     public function optionMessage($message)
@@ -183,8 +183,8 @@ class Maintenance extends Commander
 
     /**
      * Maintenance::execute
-     * 
-     * @throws \ReflectionException
+     *
+     * @throws \Exception
      */
     public function execute()
     {

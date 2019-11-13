@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -37,21 +37,7 @@ class Model extends Make
     // ------------------------------------------------------------------------
 
     /**
-     * Model::optionOrm
-     * 
-     * @param bool $useOrm
-     */
-    public function optionOrm($useOrm = true)
-    {
-        $this->isUseORM = $useOrm;
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
      * Model::execute
-     * 
-     * @throws \ReflectionException
      */
     public function execute()
     {
@@ -74,8 +60,10 @@ class Model extends Make
             $filePath = $this->optionPath . $this->optionFilename;
         }
 
-        if ( ! is_dir(dirname($filePath))) {
-            mkdir(dirname($filePath), 0777, true);
+        $fileDirectory = dirname($filePath) . DIRECTORY_SEPARATOR;
+
+        if ( ! is_dir($fileDirectory)) {
+            mkdir($fileDirectory, 0777, true);
         }
 
         if (is_file($filePath)) {
@@ -102,21 +90,16 @@ class Model extends Make
                     $subNamespace
                 )) . '\\';
 
-        $isUseORM = empty($this->isUseORM) ? false : true;
-
         $vars[ 'CREATE_DATETIME' ] = date('d/m/Y H:m');
         $vars[ 'NAMESPACE' ] = trim($classNamespace, '\\');
         $vars[ 'PACKAGE' ] = '\\' . trim($classNamespace, '\\');
         $vars[ 'CLASS' ] = $className;
         $vars[ 'FILEPATH' ] = $filePath;
-        $vars[ 'EXTEND' ] = $isUseORM
-            ? 'Orm'
-            : 'Reactor';
 
         $phpTemplate = <<<PHPTEMPLATE
 <?php
 /**
- * Created by O2System Reactor File Generator.
+ * Created by O2System Framework File Generator.
  * DateTime: CREATE_DATETIME
  */
 

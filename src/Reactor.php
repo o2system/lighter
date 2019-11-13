@@ -200,13 +200,6 @@ class Reactor extends Kernel
             profiler()->watch('Starting O2System Reactor');
         }
 
-        // Instantiate Config Container
-        if (profiler() !== false) {
-            profiler()->watch('Starting Config Container');
-        }
-
-        $this->config = new Reactor\Containers\Config();
-
         if (profiler() !== false) {
             profiler()->watch('Starting Reactor Services');
         }
@@ -230,13 +223,13 @@ class Reactor extends Kernel
         if (profiler() !== false) {
             profiler()->watch('Starting Globals Container');
         }
-        $this->globals = new Reactor\Containers\Globals();
+        $this->globals = new Kernel\DataStructures\Input\Globals();
 
         // Instantiate Environment Container
         if (profiler() !== false) {
             profiler()->watch('Starting Environment Container');
         }
-        $this->environment = new Reactor\Containers\Environment();
+        $this->environment = new Kernel\DataStructures\Input\Env();
 
         // Instantiate Models Container
         if (profiler() !== false) {

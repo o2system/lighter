@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -17,7 +17,9 @@ namespace O2System\Reactor\Http\Controllers;
 
 use O2System\Cache\Item;
 use O2System\Reactor\Http\Controller;
+use O2System\Reactor\Models\Sql\Model;
 use O2System\Psr\Http\Header\ResponseFieldInterface;
+use O2System\Spl\Exceptions\Logic\OutOfRangeException;
 
 /**
  * Class Restful
@@ -62,6 +64,20 @@ class Restful extends Controller
     protected $accessControlAllowCredentials = true;
 
     /**
+     * Access-Control-Method
+     *
+     * @var string
+     */
+    protected $accessControlMethod = 'GET';
+
+    /**
+     * Access-Control-Params
+     *
+     * @var array
+     */
+    protected $accessControlParams = [];
+
+    /**
      * Access-Control-Allow-Methods
      *
      * Used for indicates, as part of the response to a preflight request,
@@ -72,8 +88,8 @@ class Restful extends Controller
     protected $accessControlAllowMethods = [
         'GET', // common request
         'POST', // used for create, update request
-        //'PUT', // used for upload files request
-        //'DELETE', // used for delete request
+        'PUT', // used for upload files request
+        'DELETE', // used for delete request
         'OPTIONS', // used for preflight request
     ];
 
@@ -83,7 +99,7 @@ class Restful extends Controller
      * Used for indicates, as part of the response to a preflight request,
      * which header field names can be used during the actual request.
      *
-     * @type int
+     * @type array
      */
     protected $accessControlAllowHeaders = [
         'Origin',
@@ -122,15 +138,80 @@ class Restful extends Controller
      */
     protected $accessControlMaxAge = 86400;
 
-    // ------------------------------------------------------------------------
-
+    /**
+     * Restful::$ajaxOnly
+     *
+     * @var bool
+     */
     protected $ajaxOnly = false;
+
+    /**
+     * Restful::$model
+     *
+     * @var \O2System\Reactor\Models\Sql\Model|\O2System\Reactor\Models\NoSql\Model|\O2System\Reactor\Models\Files\Model
+     */
+    public $model;
+
+    /**
+     * Restful::$getParams
+     *
+     * @var array
+     */
+    public $getParams = [];
+
+    /**
+     * Restful::$getValidationRules
+     *
+     * @var array
+     */
+    public $getValidationRules = [];
+
+    /**
+     * Restful::$getValidationCustomErrors
+     *
+     * @var array
+     */
+    public $getValidationCustomErrors = [];
+
+    /**
+     * Restful::$postValidationRules
+     *
+     * @var array
+     */
+    public $postValidationRules = [];
+
+    /**
+     * Restful::$postValidationCustomErrors
+     *
+     * @var array
+     */
+    public $postValidationCustomErrors = [];
+
+    /**
+     * Restful::$fillableColumns
+     *
+     * @var array
+     */
+    public $fillableColumns = [];
+
+    /**
+     * Restful::$dataTableColumns
+     *
+     * @var array
+     */
+    public $dataTableColumns = [];
+
+    // ------------------------------------------------------------------------
 
     /**
      * Restful::__construct
      */
     public function __construct()
     {
+        if (services()->has('presenter')) {
+            presenter()->setTheme(false);
+        }
+
         if (is_ajax()) {
             output()->setContentType('application/json');
         } elseif ($this->ajaxOnly === false) {
@@ -197,6 +278,33 @@ class Restful extends Controller
 
         if (input()->server('REQUEST_METHOD') === 'OPTIONS') {
             exit(EXIT_SUCCESS);
+        } elseif ( ! in_array(input()->server('REQUEST_METHOD'), $this->accessControlAllowMethods)) {
+            $this->sendError(405);
+        } elseif (count($this->accessControlParams)) {
+            if ($this->accessControlMethod === 'GET') {
+                if (empty($_GET)) {
+                    $this->sendError(400);
+                }
+            } elseif ($this->accessControlMethod === 'POST') {
+                if (empty($_POST)) {
+                    $this->sendError(400);
+                }
+            } elseif (in_array($this->accessControlMethod, ['GETPOST', 'POSTGET'])) {
+                if (empty($_REQUEST)) {
+                    $this->sendError(400);
+                }
+            }
+        }
+
+        if (empty($this->model)) {
+            $controllerClassName = get_called_class();
+            $modelClassName = str_replace('Controllers', 'Models', $controllerClassName);
+
+            if (class_exists($modelClassName)) {
+                $this->model = new $modelClassName();
+            }
+        } elseif (class_exists($this->model)) {
+            $this->model = new $this->model();
         }
     }
 
@@ -207,11 +315,453 @@ class Restful extends Controller
      */
     public function index()
     {
-        output()->sendError(204);
+        if (empty($this->model)) {
+            output()->sendError(204);
+        } else {
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not exists!');
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not exists!');
+            }
+
+            if ($page = input()->get('page')) {
+                $this->model->withPaging($page);
+                unset($_GET[ 'page' ]);
+            }
+
+            if ($limit = input()->get('limit')) {
+                $this->model->qb->limit($limit);
+                unset($_GET[ 'limit' ]);
+            } else {
+                $limit = null;
+            }
+
+            if (count($this->getParams)) {
+                if ($get = input()->get()) {
+                    if (false !== ($result = $this->model->findWhere($get->getArrayCopy(), $limit))) {
+                        if ($result->count()) {
+                            $this->sendPayload($result);
+                        } else {
+                            $this->sendError(204);
+                        }
+                    } else {
+                        $this->sendError(204);
+                    }
+                } else {
+                    $this->sendError(400, 'Get parameters cannot be empty!');
+                }
+            } elseif (count($this->getValidationRules)) {
+                if ($get = input()->get()) {
+                    $get->validation($this->getValidationRules, $this->getValidationCustomErrors);
+
+                    if ( ! $get->validate()) {
+                        $this->sendError(400, implode(', ', $post->validator->getErrors()));
+                    } else {
+                        $conditions = [];
+
+                        foreach ($this->getValidationRules as $field => $rule) {
+                            if ($get->offsetExists($field)) {
+                                $conditions[ $field ] = $get->offsetGet($field);
+                            }
+                        }
+
+                        if (false !== ($result = $this->model->findWhere($conditions, $limit))) {
+                            if ($result->count()) {
+                                $this->sendPayload($result);
+                            } else {
+                                $this->sendError(204);
+                            }
+                        } else {
+                            $this->sendError(204);
+                        }
+                    }
+                } else {
+                    $this->sendError(400, 'Get parameters cannot be empty!');
+                }
+            } elseif ($get = input()->get()) {
+                if (false !== ($result = $this->model->findWhere($get->getArrayCopy(), $limit))) {
+                    if ($result->count()) {
+                        $this->sendPayload($result);
+                    } else {
+                        $this->sendError(204);
+                    }
+                } else {
+                    $this->sendError(204);
+                }
+            } else {
+                if (false !== ($result = $this->model->all())) {
+                    $this->sendPayload($result);
+                } else {
+                    $this->sendError(204);
+                }
+            }
+        }
     }
 
     // ------------------------------------------------------------------------
 
+    /**
+     * Restful::datatable
+     */
+    public function datatable()
+    {
+        if (empty($this->model)) {
+            output()->sendError(204);
+        } else {
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not exists!');
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not exists!');
+            }
+
+            $hasAction = false;
+            if ($request = input()->request()) {
+                // Start as limit
+                $this->model->qb->limit($request[ 'start' ]);
+
+                // Length as offset
+                $this->model->qb->offset($request[ 'length' ]);
+
+                // Set ordering
+                if ( ! empty($request[ 'order' ])) {
+                    foreach ($request[ 'order' ] as $dt => $order) {
+                        $field = $request[ 'columns' ][ $order[ 'column' ] ][ 'data' ];
+                        $this->model->qb->orderBy($field, strtoupper($order[ 'dir' ]));
+                    }
+                }
+
+                $this->model->visibleColumns = [];
+
+                foreach ($request[ 'columns' ] as $dt => $column) {
+                    if ($column[ 'data' ] === 'action') {
+                        $this->model->appendColumns[] = 'action';
+
+                        continue;
+                    }
+
+                    if ($column[ 'searchable' ]) {
+                        if ($dt == 0) {
+                            if ( ! empty($column[ 'search' ][ 'value' ])) {
+                                $this->model->qb->like($column[ 'data' ], $column[ 'search' ][ 'value' ]);
+
+                                if ( ! empty($request[ 'search' ][ 'value' ])) {
+                                    $this->model->qb->orLike($column[ 'data' ], $request[ 'search' ][ 'value' ]);
+                                }
+                            } elseif ( ! empty($request[ 'search' ][ 'value' ])) {
+                                $this->model->qb->like($column[ 'data' ], $request[ 'search' ][ 'value' ]);
+                            }
+                        } else {
+                            if ( ! empty($column[ 'search' ][ 'value' ])) {
+                                $this->model->qb->orLike($column[ 'data' ], $column[ 'search' ][ 'value' ]);
+                            }
+
+                            if ( ! empty($request[ 'search' ][ 'value' ])) {
+                                $this->model->qb->orLike($column[ 'data' ], $request[ 'search' ][ 'value' ]);
+                            }
+                        }
+                    }
+
+                    $this->model->visibleColumns[] = $column[ 'data' ];
+                }
+            }
+
+            $this->model->rebuildRowCallback(function ($row) {
+                $row->DT_RowId = 'datatable-row-' . $row->id;
+            });
+
+            if (false !== ($result = $this->model->all())) {
+                output()->sendPayload([
+                    'draw'            => input()->request('draw'),
+                    'recordsTotal'    => $result->info->num_total,
+                    'recordsFiltered' => $result->info->num_founds,
+                    'data'            => $result->toArray(),
+                ]);
+            } else {
+                $this->sendError(204);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Controller::create
+     *
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     * @throws \O2System\Spl\Exceptions\Logic\OutOfRangeException
+     */
+    public function create()
+    {
+        if ($post = input()->post()) {
+            if (count($this->postValidationRules)) {
+                $post->validation($this->postValidationRules, $this->postValidationCustomErrors);
+                if ( ! $post->validate()) {
+                    $this->sendError(400, $post->validator->getErrors());
+                }
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            $data = $post->getArrayCopy();
+            if (count($this->postValidationRules)) {
+                foreach ($this->postValidationRules as $field => $rule) {
+                    if ($post->offsetExists($field)) {
+                        $data[ $field ] = $post->offsetGet($field);
+                    }
+                }
+            }
+
+            if (count($this->fillableColumns)) {
+                foreach ($this->fillableColumns as $column) {
+                    if ($post->offsetExists($column)) {
+                        $data[ $column ] = $post->offsetGet($column);
+                    }
+                }
+            }
+
+            if (count($data)) {
+                $data[ 'record_create_timestamp' ] = $data[ 'record_update_timestamp' ] = timestamp();
+                $data[ 'record_create_user' ] = $data[ 'record_update_user' ] = globals()->account->id;
+
+                if ($this->model->insert($data)) {
+                    $data[ 'id' ] = $this->model->db->getLastInsertId();
+                    $this->sendPayload([
+                        'code' => 201,
+                        'Successful insert request',
+                        'data' => $data,
+                    ]);
+                } else {
+
+                    $this->sendError(501, 'Failed update request');
+                }
+            } else {
+                $this->sendError(400, 'Post parameters cannot be empty!');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::update
+     *
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     * @throws \O2System\Spl\Exceptions\Logic\OutOfRangeException
+     */
+    public function update()
+    {
+        if ($post = input()->post()) {
+            $conditions = [];
+
+            if (count($this->postValidationRules)) {
+                $post->validation($this->postValidationRules, $this->postValidationCustomErrors);
+
+                if (count($this->model->primaryKeys)) {
+                    foreach ($this->model->primaryKeys as $primaryKey) {
+                        $post->validator->addRule($primaryKey, language('LABEL_' . strtoupper($primaryKey)), 'required',
+                            [
+                                'required' => 'this field cannot be empty!',
+                            ]);
+                    }
+                } else {
+                    $primaryKey = empty($this->model->primaryKey) ? 'id' : $this->model->primaryKey;
+                    $conditions = [$primaryKey => $post->offsetGet($primaryKey)];
+                    $post->validator->addRule($primaryKey, language('LABEL_' . strtoupper($primaryKey)), 'required',
+                        [
+                            'required' => 'this field cannot be empty!',
+                        ]);
+                }
+
+                if ( ! $post->validate()) {
+                    $this->sendError(400, implode(', ', $post->validator->getErrors()));
+                }
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            $data = $post->getArrayCopy();
+            if (count($this->postValidationRules)) {
+                foreach ($this->postValidationRules as $field => $rule) {
+                    if ($post->offsetExists($field)) {
+                        $data[ $field ] = $post->offsetGet($field);
+                    }
+                }
+            }
+
+            if (count($this->fillableColumns)) {
+                foreach ($this->fillableColumns as $column) {
+                    if ($post->offsetExists($column)) {
+                        $data[ $column ] = $post->offsetGet($column);
+                    }
+                }
+            }
+
+            if (count($data)) {
+                $data[ 'record_update_timestamp' ] = timestamp();
+                $data[ 'record_update_user' ] = globals()->account->id;
+
+                if ($this->model->update($data, $conditions)) {
+                    $this->sendError(201, 'Successful update request');
+                } else {
+                    $this->sendError(501, 'Failed update request');
+                }
+            } else {
+                $this->sendError(400, 'Post parameters cannot be empty!');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::delete
+     *
+     * @throws \O2System\Spl\Exceptions\Logic\OutOfRangeException
+     * @throws \O2System\Spl\Exceptions\RuntimeException
+     * @throws \Psr\Cache\InvalidArgumentException
+     */
+    public function delete()
+    {
+        if ($post = input()->post()) {
+            $post->validation($this->postValidationRules, $this->postValidationCustomErrors);
+            $post->validator->addRule('id', 'ID', 'required', [
+                'required' => 'ID field cannot be empty!',
+            ]);
+
+            if ( ! $post->validate()) {
+                $this->sendError(400, implode(', ', $post->validator->getErrors()));
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            if ($this->model->delete($post->id)) {
+                $this->sendError(201, 'Successful delete request');
+            } else {
+                $this->sendError(501, 'Failed delete request');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::publish
+     *
+     * @throws OutOfRangeException
+     */
+    public function publish()
+    {
+        if ($post = input()->post()) {
+            $post->validator->addRule('id', 'ID', 'required', [
+                'required' => 'ID field cannot be empty!',
+            ]);
+
+            if ( ! $post->validate()) {
+                $this->sendError(400, implode(', ', $post->validator->getErrors()));
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            if ($this->model->publish($post->id)) {
+                $this->sendError(201, 'Successful publish request');
+            } else {
+                $this->sendError(501, 'Failed publish request');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::unpublish
+     *
+     * @throws OutOfRangeException
+     */
+    public function unpublish()
+    {
+        if ($post = input()->post()) {
+            $post->validator->addRule('id', 'ID', 'required', [
+                'required' => 'ID field cannot be empty!',
+            ]);
+
+            if ( ! $post->validate()) {
+                $this->sendError(400, implode(', ', $post->validator->getErrors()));
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            if ($this->model->unpublish($post->id)) {
+                $this->sendError(201, 'Successful unpublish request');
+            } else {
+                $this->sendError(501, 'Failed unpublish request');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::archive
+     *
+     * @throws OutOfRangeException
+     */
+    public function archive()
+    {
+        if ($post = input()->post()) {
+            $post->validator->addRule('id', 'ID', 'required', [
+                'required' => 'ID field cannot be empty!',
+            ]);
+
+            if ( ! $post->validate()) {
+                $this->sendError(400, implode(', ', $post->validator->getErrors()));
+            }
+
+            if ( ! $this->model instanceof Model) {
+                $this->sendError(503, 'Model is not ready');
+            }
+
+            if ($this->model->archive($post->id)) {
+                $this->sendError(201, 'Successful archived request');
+            } else {
+                $this->sendError(501, 'Failed archived request');
+            }
+        } else {
+            $this->sendError(400);
+        }
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Restful::sendError
+     *
+     * @param int         $code
+     * @param string|null $message
+     */
     public function sendError($code, $message = null)
     {
         if ($this->ajaxOnly === false) {
@@ -238,6 +788,8 @@ class Restful extends Controller
      *
      * @param mixed $data        The payload data to-be send.
      * @param bool  $longPooling Long pooling flag mode.
+     *
+     * @throws \Exception
      */
     public function sendPayload($data, $longPooling = false)
     {

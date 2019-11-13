@@ -16,6 +16,176 @@
  */
 // ------------------------------------------------------------------------
 
+if ( ! function_exists('tag')) {
+    /**
+     * tag
+     *
+     * Generate html tag with auto closed when the content is set.
+     *
+     * @param string      $tagName
+     * @param string|null $contents
+     * @param array       $attributes
+     *
+     * @return string
+     */
+    function tag($tagName, $contents = null, array $attributes = [])
+    {
+        if (($tag = substr($tagName, 0)) === '/') {
+            $element = new \O2System\Html\Element($tag);
+
+            return $element->close();
+        } else {
+            $element = new \O2System\Html\Element($tagName);
+            if (count($attributes)) {
+                foreach ($attributes as $name => $value) {
+                    $element->attributes->addAttribute($name, $value);
+                }
+            }
+
+            if (is_array($contents)) {
+                foreach ($contents as $content) {
+                    if ($content instanceof \O2System\Html\Element) {
+                        $element->childNodes->push($content);
+                    } elseif (is_string($content) || is_numeric($content)) {
+                        $element->textContent->push($content);
+                    }
+                }
+            } elseif ($contents instanceof \O2System\Html\Element) {
+                $element->childNodes->push($contents);
+            } elseif (is_string($contents) || is_numeric($contents)) {
+                $element->textContent->push($contents);
+            }
+
+            if ( ! is_null($contents)) {
+                return $element->render();
+            } else {
+                return $element->open();
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('video')) {
+    /**
+     * video
+     *
+     * Generate video, such as a movie clip or other video streams.
+     *
+     * @param string $src
+     * @param array  $attributes
+     *
+     * @return string
+     */
+    function video($src, array $attributes = [])
+    {
+        $attributes = array_merge([
+            'width'    => 320,
+            'height'   => 240,
+            'controls' => 'controls',
+        ], $attributes);
+
+        $video = new \O2System\Html\Element('video');
+
+        foreach ($attributes as $name => $value) {
+            $video->attributes->addAttribute($name, $value);
+        }
+
+        $ext = strtolower(pathinfo($src, PATHINFO_EXTENSION));
+
+        if (in_array($ext, ['mp4', 'ogg', 'webm'])) {
+            $source = new \O2System\Html\Element('source');
+
+            if (is_file($src)) {
+                $src = path_to_url($src);
+            }
+
+            $source->attributes->addAttribute('src', $src);
+            $source->attributes->addAttribute('type', 'video/' . $ext);
+            $video->childNodes->push($source);
+        }
+
+        $video->textContent->push(language()->getLine('VIDEO_NOT_SUPPORTED'));
+
+        return $video->render();
+    }
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('audio')) {
+    /**
+     * audio
+     *
+     * Generate audio, such as music or other audio streams.
+     *
+     * @param string $src
+     * @param array  $attributes
+     *
+     * @return string
+     */
+    function audio($src, array $attributes = [])
+    {
+        $attributes = array_merge([
+            'controls' => 'controls',
+        ], $attributes);
+
+        $audio = new \O2System\Html\Element('audio');
+
+        foreach ($attributes as $name => $value) {
+            $audio->attributes->addAttribute($name, $value);
+        }
+
+        $ext = strtolower(pathinfo($src, PATHINFO_EXTENSION));
+
+        if (in_array($ext, ['mpeg', 'ogg', 'wav'])) {
+            $source = new \O2System\Html\Element('source');
+
+            if (is_file($src)) {
+                $src = path_to_url($src);
+            }
+
+            $source->attributes->addAttribute('src', $src);
+            $source->attributes->addAttribute('type', 'audio/' . $ext);
+            $audio->childNodes->push($source);
+        }
+
+        $audio->textContent->push(language()->getLine('AUDIO_NOT_SUPPORTED'));
+
+        return $audio->render();
+    }
+}
+
+// ------------------------------------------------------------------------
+
+if ( ! function_exists('canvas')) {
+    /**
+     * canvas
+     *
+     * Generate canvas html element.
+     *
+     * @param array $attributes
+     *
+     * @return string
+     */
+    function canvas(array $attributes = [])
+    {
+        $canvas = new \O2System\Html\Element('canvas');
+
+        if (count($attributes)) {
+            foreach ($attributes as $name => $value) {
+                $canvas->attributes->addAttribute($name, $value);
+            }
+        }
+
+        $canvas->textContent->push(language()->getLine('CANVAS_NOT_SUPPORTED'));
+
+        return $canvas->render();
+    }
+}
+// ------------------------------------------------------------------------
+
 if ( ! function_exists('meta')) {
     /**
      * meta

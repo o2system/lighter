@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -22,6 +22,24 @@ namespace O2System\Reactor\Http;
  */
 class Controller extends \O2System\Kernel\Http\Controller
 {
+    /**
+     * Controller::$inherited
+     *
+     * Controller inherited flag.
+     *
+     * @var bool
+     */
+    static public $inherited = false;
+
+    /**
+     * Controller::__get
+     *
+     * Magic method __get.
+     *
+     * @param string $property
+     *
+     * @return mixed
+     */
     public function &__get($property)
     {
         $get[ $property ] = false;
@@ -42,5 +60,18 @@ class Controller extends \O2System\Kernel\Http\Controller
         }
 
         return $get[ $property ];
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Controller::view
+     *
+     * @param string $file
+     * @param array  $vars
+     */
+    protected function view($file, array $vars = [])
+    {
+        view($file, $vars);
     }
 }

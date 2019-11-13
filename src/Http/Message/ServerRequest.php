@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,6 +15,7 @@ namespace O2System\Reactor\Http\Message;
 
 // ------------------------------------------------------------------------
 
+use O2System\Reactor\DataStructures\Input\Files;
 use O2System\Kernel\Http\Message;
 use O2System\Kernel\Http\Router\DataStructures\Controller;
 
@@ -33,6 +34,23 @@ class ServerRequest extends Message\ServerRequest implements \IteratorAggregate
      * @var string Controller FilePath.
      */
     protected $controller;
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ServerRequest::__construct
+     *
+     * @throws \O2System\Spl\Exceptions\Logic\BadFunctionCall\BadDependencyCallException
+     */
+    public function __construct()
+    {
+        parent::__construct();
+        
+        $uploadedFiles = new Files();
+        $uploadedFiles->exchangeArray($this->uploadedFiles->getArrayCopy());
+        
+        $this->uploadedFiles = $uploadedFiles;
+    }
 
     // ------------------------------------------------------------------------
 

@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -69,11 +69,7 @@ class Output extends \O2System\Kernel\Http\Output
      */
     public function getFilePath($filename)
     {
-        if (modules()) {
-            $filePaths = modules()->getDirs('Views');
-        } else {
-            $filePaths = array_reverse($this->filePaths);
-        }
+        $filePaths = array_reverse($this->filePaths);
 
         foreach ($filePaths as $filePath) {
             if (is_file($filePath . $filename . '.phtml')) {
@@ -179,25 +175,12 @@ class Output extends \O2System\Kernel\Http\Output
                 exit(EXIT_ERROR);
             }
 
-            if (services()->has('presenter')) {
-                if (presenter()->theme) {
-                    presenter()->theme->load();
-                }
-
-                $vars = presenter()->getArrayCopy();
-                extract($vars);
-            }
-
             $filePath = $this->getFilePath('error');
 
             ob_start();
             include $filePath;
             $htmlOutput = ob_get_contents();
             ob_end_clean();
-
-            if (services()->has('presenter')) {
-                $htmlOutput = presenter()->assets->parseSourceCode($htmlOutput);
-            }
 
             echo $htmlOutput;
             exit(EXIT_ERROR);
@@ -246,27 +229,12 @@ class Output extends \O2System\Kernel\Http\Output
 
         $this->sendHeaders($headers);
 
-        if (services()->has('presenter')) {
-            presenter()->initialize();
-
-            if (presenter()->theme) {
-                presenter()->theme->load();
-            }
-
-            $vars = presenter()->getArrayCopy();
-            extract($vars);
-        }
-
         extract($error);
 
         ob_start();
         include $this->getFilePath('error-code');
         $htmlOutput = ob_get_contents();
         ob_end_clean();
-
-        if (services()->has('presenter')) {
-            $htmlOutput = presenter()->assets->parseSourceCode($htmlOutput);
-        }
 
         echo $htmlOutput;
         exit(EXIT_ERROR);

@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -19,16 +19,14 @@ namespace O2System\Reactor\Cli;
  * Class Commander
  * @package O2System\Reactor\Cli
  */
-class Commander extends \O2System\Kernel\Cli\Commander
+abstract class Commander extends \O2System\Kernel\Cli\Commander
 {
     /**
-     * Controller::__get
-     *
-     * Magic method __get.
+     * Commander::__get
      *
      * @param string $property
      *
-     * @return mixed
+     * @return mixed|\O2System\Reactor\Containers\Models|\O2System\Reactor\Models\NoSql\Model|\O2System\Reactor\Models\Sql\Model
      */
     public function &__get($property)
     {
@@ -40,15 +38,11 @@ class Commander extends \O2System\Kernel\Cli\Commander
         }
 
         if (services()->has($property)) {
-            $get[ $property ] = services()->get($property);
+            return services()->get($property);
         } elseif (o2system()->__isset($property)) {
-            $get[ $property ] = o2system()->__get($property);
-        } elseif ($property === 'models') {
-            $get[ $property ] = models();
+            return o2system()->__get($property);
         } elseif ($property === 'model') {
-            $get[ $property ] = models('controller');
-        } elseif ($property === 'services' || $property === 'libraries') {
-            $get[ $property ] = services();
+            return models('controller');
         }
 
         return $get[ $property ];

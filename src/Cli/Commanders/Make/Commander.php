@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -99,7 +99,7 @@ class Commander extends Make
         $phpTemplate = <<<PHPTEMPLATE
 <?php
 /**
- * Created by O2System Reactor File Generator.
+ * Created by O2System Framework File Generator.
  * DateTime: CREATE_DATETIME
  */
 

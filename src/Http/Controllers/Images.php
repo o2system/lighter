@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System Reactor package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -47,7 +47,7 @@ class Images extends Controller
      *
      * @var string
      */
-    public $imageNotFoundFilename = 'not-found.jpg';
+    public $imageNotFoundFilename = 'default/not-found.jpg';
 
     /**
      * Images::$imageFilePath
@@ -102,7 +102,7 @@ class Images extends Controller
     public function __construct()
     {
         $this->storagePath = PATH_STORAGE . 'images' . DIRECTORY_SEPARATOR;
-        $this->imageNotFoundFilename = $this->storagePath . 'not-found.jpg';
+        $this->imageNotFoundFilename = $this->storagePath . 'default/not-found.jpg';
     }
 
     // ------------------------------------------------------------------------
@@ -115,7 +115,7 @@ class Images extends Controller
         $segments = server_request()->getUri()->segments->getArrayCopy();
 
         if (false !== ($key = array_search('images', $segments))) {
-            $segments = array_slice($segments, $key);
+            unset($segments[$key]);
         } else {
             array_shift($segments);
         }

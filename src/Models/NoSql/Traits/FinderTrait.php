@@ -15,7 +15,7 @@ namespace O2System\Reactor\Models\NoSql\Traits;
 
 // ------------------------------------------------------------------------
 
-use O2System\Database\DataObjects;
+use O2System\Reactor\Models\NoSql\DataObjects;
 
 /**
  * Class FinderTrait

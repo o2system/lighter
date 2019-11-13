@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -15,7 +15,7 @@ namespace O2System\Reactor\Cli\Commanders;
 
 // ------------------------------------------------------------------------
 
-use O2System\Kernel\Cli\Commander;
+use O2System\Reactor\Cli\Commander;
 use O2System\Kernel\Cli\Writers\Format;
 use O2System\Kernel\Cli\Writers\Table;
 
@@ -68,25 +68,53 @@ class Registry extends Commander
         ],
     ];
 
+    /**
+     * Registry::$optionModules
+     *
+     * @var bool
+     */
+    protected $optionModules = false;
+
+    /**
+     * Registry::$optionLanguages
+     *
+     * @var bool
+     */
+    protected $optionLanguages = false;
+
     // ------------------------------------------------------------------------
 
     /**
-     * Registry::optionUpdate
-     * 
-     * @param string|null $type
+     * Registry::optionModules
      */
-    public function optionUpdate($type = null)
+    public function optionModules()
     {
-        if (in_array($type, ['modules', 'languages'])) {
-            switch ($type) {
-                case 'modules':
-                    modules()->updateRegistry();
-                    break;
+        $this->optionModules = true;
+    }
 
-                case 'languages':
-                    language()->updateRegistry();
-                    break;
-            }
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::optionLanguages
+     */
+    public function optionLanguages()
+    {
+        $this->optionLanguages = true;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Registry::update
+     *
+     * @throws \Exception
+     */
+    public function update()
+    {
+        if($this->optionModules) {
+            modules()->updateRegistry();
+        } elseif($this->optionLanguages) {
+            language()->updateRegistry();
         } else {
             modules()->updateRegistry();
             language()->updateRegistry();
@@ -98,23 +126,16 @@ class Registry extends Commander
     // ------------------------------------------------------------------------
 
     /**
-     * Registry::optionFlush
-     * 
-     * @param string|null $type
+     * Registry::flush
+     *
+     * @throws \Psr\Cache\InvalidArgumentException
      */
-    public function optionFlush($type = null)
+    public function flush()
     {
-        if (in_array($type, ['modules', 'languages'])) {
-            switch ($type) {
-                case 'modules':
-                    modules()->flushRegistry();
-                    break;
-
-                case 'languages':
-                    language()->flushRegistry();
-                    break;
-            }
-
+        if($this->optionModules) {
+            modules()->flushRegistry();
+        } elseif($this->optionLanguages) {
+            language()->flushRegistry();
         } else {
             modules()->flushRegistry();
             language()->flushRegistry();
@@ -126,9 +147,9 @@ class Registry extends Commander
     // ------------------------------------------------------------------------
 
     /**
-     * Registry::optionInfo
+     * Registry::info
      */
-    public function optionInfo()
+    public function info()
     {
         $table = new Table();
 
@@ -159,28 +180,23 @@ class Registry extends Commander
     // ------------------------------------------------------------------------
 
     /**
-     * Registry::optionMetadata
-     * 
-     * @param string $type
+     * Registry::metadata
      */
-    public function optionMetadata($type)
+    public function metadata()
     {
-        if (in_array($type, ['modules', 'languages'])) {
-            switch ($type) {
-                case 'modules':
-                    $line = PHP_EOL . print_r(modules()->getRegistry(), true);
-                    break;
+        if($this->optionModules) {
+            $line = PHP_EOL . print_r(modules()->getRegistry(), true);
+        } elseif($this->optionLanguages) {
+            $line = PHP_EOL . print_r(language()->getRegistry(), true);
+        } else {
+            $line = PHP_EOL . print_r(modules()->getRegistry(), true);
+            $line.= PHP_EOL . print_r(language()->getRegistry(), true);
+        }
 
-                case 'languages':
-                    $line = PHP_EOL . print_r(language()->getRegistry(), true);
-                    break;
-            }
+        if (isset($line)) {
+            output()->write($line);
 
-            if (isset($line)) {
-                output()->write($line);
-
-                exit(EXIT_SUCCESS);
-            }
+            exit(EXIT_SUCCESS);
         }
     }
 }

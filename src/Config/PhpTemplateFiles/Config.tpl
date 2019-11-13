@@ -1,6 +1,6 @@
 <?php
 /**
- * Created by O2System Reactor File Generator.
+ * Created by O2System Framework File Generator.
  * DateTime: CREATE_DATETIME
  */
 

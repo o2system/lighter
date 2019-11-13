@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -25,6 +25,17 @@ use O2System\Reactor\Http\Controller;
 class Error extends Controller
 {
     /**
+     * Error::$inherited
+     *
+     * Controller inherited flag.
+     *
+     * @var bool
+     */
+    static public $inherited = true;
+
+    // ------------------------------------------------------------------------
+
+    /**
      * Error::index
      *
      * @param int $code
@@ -33,17 +44,21 @@ class Error extends Controller
     {
         $codeString = $code . '_' . error_code_string($code);
 
-        if (presenter()->theme->use === true) {
-            presenter()->theme->setLayout('error');
+        $viewFilePath = 'error-code';
 
-            if (false !== ($layout = presenter()->theme->active->getLayout())) {
+        if (presenter()->theme) {
+            if (presenter()->theme->hasLayout('error-code')) {
+                presenter()->theme->setLayout('error-code');
+            }
+
+            if (false !== ($layout = presenter()->theme->getLayout())) {
                 if ($layout->getFilename() === 'theme') {
-                    presenter()->theme->set(false);
+                    presenter()->setTheme(false);
                 }
             }
         }
 
-        view('error-code', [
+        view($viewFilePath, [
             'code'    => $code,
             'title'   => language()->getLine($codeString . '_TITLE'),
             'message' => language()->getLine($codeString . '_MESSAGE'),

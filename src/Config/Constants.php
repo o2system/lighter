@@ -1,6 +1,6 @@
 <?php
 /**
- * This file is part of the O2System PHP Framework package.
+ * This file is part of the O2System Framework package.
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
@@ -12,10 +12,10 @@
 
 /*
 |--------------------------------------------------------------------------
-| Reactor Name and Version
+| Framework Name and Version
 |--------------------------------------------------------------------------
 */
-define('FRAMEWORK_NAME', 'O2System Mini Reactor');
+define('FRAMEWORK_NAME', 'O2System PHP Framework');
 define('FRAMEWORK_VERSION', '5.0.0');
 
 /*
