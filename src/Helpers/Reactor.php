@@ -206,28 +206,6 @@ if ( ! function_exists('models')) {
 
 // ------------------------------------------------------------------------
 
-if ( ! function_exists('modules')) {
-    /**
-     * modules
-     *
-     * Convenient shortcut for O2System Framework Modules container.
-     *
-     * @return O2System\Reactor\Containers\Modules|O2System\Reactor\Containers\Modules\DataStructures\Module
-     */
-    function modules()
-    {
-        $args = func_get_args();
-
-        if (count($args)) {
-            return o2system()->modules->getModule($args[ 0 ]);
-        }
-
-        return o2system()->modules;
-    }
-}
-
-// ------------------------------------------------------------------------
-
 if ( ! function_exists('router')) {
     /**
      * router

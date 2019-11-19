@@ -53,24 +53,6 @@ class AccessControl extends \O2System\Security\Authentication\User
     // ------------------------------------------------------------------------
 
     /**
-     * User::setApp
-     *
-     * @param string $app
-     *
-     * @return static
-     */
-    public function setApp($app)
-    {
-        if ($app = modules()->getApp($app)) {
-            $this->app = $app;
-        }
-
-        return $this;
-    }
-
-    // ------------------------------------------------------------------------
-
-    /**
      * User::authenticate
      *
      * @param string $username

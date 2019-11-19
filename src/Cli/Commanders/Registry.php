@@ -69,28 +69,11 @@ class Registry extends Commander
     ];
 
     /**
-     * Registry::$optionModules
-     *
-     * @var bool
-     */
-    protected $optionModules = false;
-
-    /**
      * Registry::$optionLanguages
      *
      * @var bool
      */
     protected $optionLanguages = false;
-
-    // ------------------------------------------------------------------------
-
-    /**
-     * Registry::optionModules
-     */
-    public function optionModules()
-    {
-        $this->optionModules = true;
-    }
 
     // ------------------------------------------------------------------------
 
@@ -111,9 +94,7 @@ class Registry extends Commander
      */
     public function update()
     {
-        if($this->optionModules) {
-            modules()->updateRegistry();
-        } elseif($this->optionLanguages) {
+        if($this->optionLanguages) {
             language()->updateRegistry();
         } else {
             modules()->updateRegistry();
@@ -132,12 +113,9 @@ class Registry extends Commander
      */
     public function flush()
     {
-        if($this->optionModules) {
-            modules()->flushRegistry();
-        } elseif($this->optionLanguages) {
+        if($this->optionLanguages) {
             language()->flushRegistry();
         } else {
-            modules()->flushRegistry();
             language()->flushRegistry();
         }
 
@@ -156,11 +134,6 @@ class Registry extends Commander
         $table
             ->addHeader('Metadata')
             ->addHeader('Total');
-
-        $table
-            ->addRow()
-            ->addColumn('Modules')
-            ->addColumn(modules()->getTotalRegistry());
 
         $table
             ->addRow()
@@ -184,12 +157,9 @@ class Registry extends Commander
      */
     public function metadata()
     {
-        if($this->optionModules) {
-            $line = PHP_EOL . print_r(modules()->getRegistry(), true);
-        } elseif($this->optionLanguages) {
+        if($this->optionLanguages) {
             $line = PHP_EOL . print_r(language()->getRegistry(), true);
         } else {
-            $line = PHP_EOL . print_r(modules()->getRegistry(), true);
             $line.= PHP_EOL . print_r(language()->getRegistry(), true);
         }
 

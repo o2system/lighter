@@ -15,7 +15,6 @@ namespace O2System\Reactor\Services;
 
 // ------------------------------------------------------------------------
 
-use O2System\Reactor\Containers\Modules;
 use O2System\Psr\Loader\AutoloadInterface;
 
 /**

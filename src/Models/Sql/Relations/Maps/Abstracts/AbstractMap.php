@@ -123,8 +123,8 @@ abstract class AbstractMap
             $this->referenceModel = new class extends Model
             {
             };
-            $this->referenceModel->table = $this->referenceTable = $referenceModel;
-            $this->referenceModel->primaryKey = $this->referencePrimaryKey = 'id';
+            $this->referenceModel->table = $this->referenceTable = models($referenceModel)->table;
+            $this->referenceModel->primaryKey = $this->referencePrimaryKey = models($referenceModel)->primaryKey;
         }
 
         if (empty($this->currentForeignKey)) {

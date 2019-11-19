@@ -163,9 +163,9 @@ trait ModifierTrait
 
             if ($this->qb->table($this->table)->insert($sets)) {
                 if (method_exists($this, 'afterInsert')) {
-                    $this->afterInsert();
+                    $this->afterInsert($sets);
                 } elseif (method_exists($this, 'afterInsertOrUpdate')) {
-                    $this->afterInsertOrUpdate();
+                    $this->afterInsertOrUpdate($sets);
                 }
 
                 if (method_exists($this, 'rebuildTree')) {
@@ -282,7 +282,7 @@ trait ModifierTrait
 
             if ($this->qb->table($this->table)->insertBatch($sets)) {
                 if (method_exists($this, 'afterInsertMany')) {
-                    $this->afterInsertMany();
+                    $this->afterInsertMany($sets);
                 } elseif (method_exists($this, 'afterInsertOrUpdateMany')) {
                     $this->afterInsertOrUpdateMany($sets);
                 }
@@ -454,9 +454,9 @@ trait ModifierTrait
                 if ($this->qb->table($this->table)->update($sets, $conditions)) {
 
                     if (method_exists($this, 'afterUpdate')) {
-                        $this->afterUpdate();
+                        $this->afterUpdate($sets);
                     } elseif (method_exists($this, 'afterInsertOrUpdate')) {
-                        $this->afterInsertOrUpdate();
+                        $this->afterInsertOrUpdate($sets);
                     }
 
                     $label = false;
@@ -542,14 +542,14 @@ trait ModifierTrait
         if (method_exists($this, 'beforeUpdateMany')) {
             $this->beforeUpdateMany($sets);
         } elseif (method_exists($this, 'beforeInsertOrUpdateMany')) {
-            $this->beforeInsertOrUpdateMany();
+            $this->beforeInsertOrUpdateMany($sets);
         }
 
         if ($this->qb->table($this->table)->updateBatch($sets, $primaryKey)) {
             if (method_exists($this, 'afterUpdateMany')) {
-                return $this->afterUpdateMany();
+                return $this->afterUpdateMany($sets);
             } elseif (method_exists($this, 'afterInsertOrUpdateMany')) {
-                return $this->afterInsertOrUpdateMany();
+                return $this->afterInsertOrUpdateMany($sets);
             }
 
             $affectedRows = $this->db->getAffectedRows();
