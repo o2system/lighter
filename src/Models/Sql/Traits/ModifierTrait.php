@@ -15,10 +15,10 @@ namespace O2System\Reactor\Models\Sql\Traits;
 
 // ------------------------------------------------------------------------
 
+use O2System\Image\Uploader;
 use O2System\Reactor\Libraries\Ui\Contents\Lists\Unordered;
 use O2System\Reactor\Models\Sql\DataObjects\Result;
 use O2System\Reactor\Models\Sql\DataObjects\Result\Row;
-use O2System\Image\Uploader;
 
 /**
  * Class TraitModifier
@@ -230,13 +230,17 @@ trait ModifierTrait
     public function insertOrUpdate(array $sets, array $conditions = [])
     {
         if (count($sets)) {
-            $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
-
             if (empty($conditions)) {
-                if (isset($sets[ $primaryKey ])) {
-                    $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                if (empty($this->primaryKeys)) {
+                    foreach ($this->primaryKeys as $primaryKey) {
+                        if (isset($sets[ $primaryKey ])) {
+                            $conditions[ $primaryKey ] = $sets[ $primaryKey ];
+                        }
+                    }
                 } else {
-                    $conditions = $sets;
+                    if (isset($sets[ $primaryKey ])) {
+                        $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                    }
                 }
             }
 
@@ -342,11 +346,17 @@ trait ModifierTrait
     public function update(array $sets, array $conditions = [])
     {
         if (count($sets)) {
-            $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
-
             if (empty($conditions)) {
-                if (isset($sets[ $primaryKey ])) {
-                    $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                if (empty($this->primaryKeys)) {
+                    foreach ($this->primaryKeys as $primaryKey) {
+                        if (isset($sets[ $primaryKey ])) {
+                            $conditions[ $primaryKey ] = $sets[ $primaryKey ];
+                        }
+                    }
+                } else {
+                    if (isset($sets[ $primaryKey ])) {
+                        $conditions = [$primaryKey => $sets[ $primaryKey ]];
+                    }
                 }
             }
 
@@ -577,51 +587,117 @@ trait ModifierTrait
      */
     public function delete($id)
     {
+        $params = func_get_args();
+
         if (method_exists($this, 'beforeDelete')) {
-            $this->beforeDelete($id);
+            call_user_func_array([&$this, 'beforeDelete'], $params);
         }
 
-        if(($row = $this->find($id)) instanceof Row) {
-            if (isset($this->uploadedImageFilePath)) {
+        if (empty($this->primaryKeys)) {
+            $conditions = [$this->primaryKey => reset($params)];
+        } else {
+            foreach ($this->primaryKeys as $key => $primaryKey) {
+                $conditions[ $primaryKey ] = $params[ $key ];
+            }
+        }
 
-                // Remove Uploaded Image
-                if ($this->uploadedImageKey) {
-                    if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($this->uploadedImageKey))) {
-                        unlink($filePath);
-                    }
-                } elseif (count($this->uploadedImageKeys)) {
-                    foreach ($this->uploadedImageKeys as $uploadedImageKey) {
-                        if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($uploadedImageKey))) {
-                            unlink($filePath);
-                        }
-                    }
+        $affectedRows = 0;
+        if ($result = $this->findWhere($conditions)) {
+            if ($result instanceof Result) {
+                foreach ($result as $row) {
+                    $this->deleteRow($row);
+                    $affectedRows++;
                 }
+            } elseif ($result instanceof Row) {
+                $this->deleteRow($result);
+                $affectedRows++;
+            }
+        }
 
-                // Remove Uploaded File
-                if ($this->uploadedFileFilepath) {
-                    if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($this->uploadedFileKey))) {
+        if ($affectedRows > 0) {
+            if (method_exists($this, 'rebuildTree')) {
+                $this->rebuildTree();
+            }
+
+            if (method_exists($this, 'afterDelete')) {
+                call_user_func_array([&$this, 'afterDelete'], $params);
+            }
+
+            return $affectedRows;
+        }
+
+        return false;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * ModifierTrait::deleteRow
+     *
+     * @param \O2System\Reactor\Models\Sql\DataObjects\Result\Row $row
+     *
+     * @return bool|mixed
+     */
+    private function deleteRow(Row $row)
+    {
+        if (isset($this->uploadedImageFilePath)) {
+
+            // Remove Uploaded Image
+            if ($this->uploadedImageKey) {
+                if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($this->uploadedImageKey))) {
+                    unlink($filePath);
+                }
+            } elseif (count($this->uploadedImageKeys)) {
+                foreach ($this->uploadedImageKeys as $uploadedImageKey) {
+                    if (is_file($filePath = $this->uploadedImageFilePath . $row->offsetGet($uploadedImageKey))) {
                         unlink($filePath);
-                    }
-                } elseif (count($this->uploadedFileKeys)) {
-                    foreach ($this->uploadedFileKeys as $uploadedFileKey) {
-                        if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($uploadedFileKey))) {
-                            unlink($filePath);
-                        }
                     }
                 }
             }
 
-            if ($model->qb->table($model->table)->limit(1)->delete([$primaryKey => $id])) {
-                if (method_exists($this, 'rebuildTree')) {
-                    $this->rebuildTree();
+            // Remove Uploaded File
+            if ($this->uploadedFileFilepath) {
+                if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($this->uploadedFileKey))) {
+                    unlink($filePath);
                 }
-                
-                if (method_exists($model, 'afterDelete')) {
-                    return $model->afterDelete();
+            } elseif (count($this->uploadedFileKeys)) {
+                foreach ($this->uploadedFileKeys as $uploadedFileKey) {
+                    if (is_file($filePath = $this->uploadedFileFilepath . $row->offsetGet($uploadedFileKey))) {
+                        unlink($filePath);
+                    }
                 }
-
-                return true;
             }
+        }
+
+        if (empty($this->primaryKeys)) {
+            $conditions = [$this->primaryKey => $row->offsetGet($this->primaryKey)];
+        } else {
+            foreach ($this->primaryKeys as $key => $primaryKey) {
+                $conditions[ $primaryKey ] = $row->offsetGet($primaryKey);
+            }
+        }
+
+        if ($this->qb->table($this->table)->limit(1)->delete($conditions)) {
+            $label = false;
+            foreach (['name', 'label', 'title', 'code'] as $labelField) {
+                if ($row->offsetExists($labelField)) {
+                    if (services()->has('session') and $this->flashMessage) {
+                        session()->setFlash('success',
+                            language('SUCCESS_DELETE_WITH_LABEL', [$row->offsetGet($labelField)]));
+                    }
+
+                    $label = true;
+                    break;
+                }
+            }
+
+            if ($label === false) {
+                if (services()->has('session') and $this->flashMessage) {
+                    session()->setFlash('success', language('SUCCESS_DELETE'));
+                }
+            }
+
+            return true;
         }
 
         return false;
@@ -647,8 +723,14 @@ trait ModifierTrait
 
             $affectedRows = 0;
             if ($result = $this->findWhere($conditions)) {
-                if ($model->qb->table($model->table)->limit(1)->delete($conditions)) {
-                    $affectedRows = $this->db->getAffectedRows();
+                if ($result instanceof Result) {
+                    foreach ($result as $row) {
+                        $this->deleteRow($row);
+                        $affectedRows++;
+                    }
+                } elseif ($result instanceof Row) {
+                    $this->deleteRow($result);
+                    $affectedRows++;
                 }
             }
 
@@ -656,11 +738,11 @@ trait ModifierTrait
                 if (method_exists($this, 'rebuildTree')) {
                     $this->rebuildTree();
                 }
-                
+
                 if (method_exists($this, 'afterDelete')) {
                     $this->afterDelete($conditions);
                 }
-                
+
                 return $affectedRows;
             }
         }
@@ -688,7 +770,7 @@ trait ModifierTrait
         $affectedRows = 0;
         if ($result = $this->findIn($ids)) {
             foreach ($result as $row) {
-                if ($this->delete($row)) {
+                if ($this->deleteRow($row)) {
                     $affectedRows++;
                 }
             }
@@ -730,16 +812,23 @@ trait ModifierTrait
     /**
      * ModifierTrait::updateRecordStatus
      *
-     * @param int    $id
+     * @param array  $params
      * @param string $recordStatus
      * @param string $method
      *
      * @return bool
      */
-    private function updateRecordStatus($id, $recordStatus, $method)
+    private function updateRecordStatus(array $params, $recordStatus, $method)
     {
         $sets[ 'record_status' ] = $recordStatus;
-        $primaryKey = isset($this->primaryKey) ? $this->primaryKey : 'id';
+
+        if (empty($this->primaryKeys)) {
+            $conditions = [$this->primaryKey => reset($params)];
+        } else {
+            foreach ($this->primaryKeys as $key => $primaryKey) {
+                $conditions[ $primaryKey ] = $params[ $key ];
+            }
+        }
 
         if (method_exists($this, 'updateRecordSets')) {
             $this->updateRecordSets($sets);
@@ -749,13 +838,17 @@ trait ModifierTrait
             call_user_func_array([&$this, $beforeMethod], [$sets]);
         }
 
-        if ($this->qb->table($this->table)->limit(1)->update($sets, [$primaryKey => $id])) {
+        if ($this->qb->table($this->table)->limit(1)->update($sets, $conditions)) {
             if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
-                call_user_func([&$this, $beforeMethod]);
+                call_user_func_array([&$this, $afterMethod], [$sets]);
             }
 
             if (method_exists($this, 'rebuildTree')) {
                 $this->rebuildTree();
+            }
+
+            if (services()->has('session') and $this->flashMessage) {
+                session()->setFlash('success', language('SUCCESS_UPDATE'));
             }
 
             return true;
@@ -793,13 +886,17 @@ trait ModifierTrait
 
             if ($this->qb->table($this->table)->update($sets)) {
                 if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
-                    call_user_func([&$this, $beforeMethod]);
+                    call_user_func_array([&$this, $afterMethod], [$sets]);
                 }
 
                 $affectedRows = $this->db->getAffectedRows();
 
                 if (method_exists($this, 'rebuildTree')) {
                     $this->rebuildTree();
+                }
+
+                if (services()->has('session') and $this->flashMessage) {
+                    session()->setFlash('success', language('SUCCESS_UPDATE'));
                 }
 
                 return $affectedRows;
@@ -835,13 +932,17 @@ trait ModifierTrait
 
             if ($this->qb->table($this->table)->update($sets, $conditions)) {
                 if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
-                    call_user_func([&$this, $beforeMethod]);
+                    call_user_func_array([&$this, $afterMethod], [$sets]);
                 }
 
                 $affectedRows = $this->db->getAffectedRows();
 
                 if (method_exists($this, 'rebuildTree')) {
                     $this->rebuildTree();
+                }
+
+                if (services()->has('session') and $this->flashMessage) {
+                    session()->setFlash('success', language('SUCCESS_UPDATE'));
                 }
 
                 return $affectedRows;
@@ -877,13 +978,17 @@ trait ModifierTrait
 
             if ($this->qb->table($this->table)->update($sets, $conditions)) {
                 if (method_exists($this, $afterMethod = 'after' . ucfirst($method))) {
-                    call_user_func([&$this, $beforeMethod]);
+                    call_user_func_array([&$this, $afterMethod], [$sets]);
                 }
 
                 $affectedRows = $this->db->getAffectedRows();
 
                 if (method_exists($this, 'rebuildTree')) {
                     $this->rebuildTree();
+                }
+
+                if (services()->has('session') and $this->flashMessage) {
+                    session()->setFlash('success', language('SUCCESS_UPDATE'));
                 }
 
                 return $affectedRows;
@@ -904,7 +1009,7 @@ trait ModifierTrait
      */
     public function publish($id)
     {
-        return $this->updateRecordStatus($id, 'PUBLISH', 'publish');
+        return $this->updateRecordStatus(func_get_args(), 'PUBLISH', 'publish');
     }
 
     // ------------------------------------------------------------------------
@@ -960,7 +1065,7 @@ trait ModifierTrait
      */
     public function restore($id)
     {
-        return $this->updateRecordStatus($id, 'PUBLISH', 'restore');
+        return $this->updateRecordStatus(func_get_args(), 'PUBLISH', 'restore');
     }
 
     // ------------------------------------------------------------------------
@@ -1016,7 +1121,7 @@ trait ModifierTrait
      */
     public function unpublish($id)
     {
-        return $this->updateRecordStatus($id, 'UNPUBLISH', 'unpublish');
+        return $this->updateRecordStatus(func_get_args(), 'UNPUBLISH', 'unpublish');
     }
 
     // ------------------------------------------------------------------------
@@ -1072,7 +1177,7 @@ trait ModifierTrait
      */
     public function softDelete($id)
     {
-        return $this->updateRecordStatus($id, 'DELETED', 'softDelete');
+        return $this->updateRecordStatus(func_get_args(), 'DELETED', 'softDelete');
     }
 
     // ------------------------------------------------------------------------
@@ -1128,7 +1233,7 @@ trait ModifierTrait
      */
     public function archive($id)
     {
-        return $this->updateRecordStatus($id, 'ARCHIVED', 'archive');
+        return $this->updateRecordStatus(func_get_args(), 'ARCHIVED', 'archive');
     }
 
     // ------------------------------------------------------------------------
@@ -1184,7 +1289,7 @@ trait ModifierTrait
      */
     public function lock($id)
     {
-        return $this->updateRecordStatus($id, 'LOCKED', 'lock');
+        return $this->updateRecordStatus(func_get_args(), 'LOCKED', 'lock');
     }
 
     // ------------------------------------------------------------------------
@@ -1240,7 +1345,7 @@ trait ModifierTrait
      */
     public function draft($id)
     {
-        return $this->updateRecordStatus($id, 'DRAFT', 'draft');
+        return $this->updateRecordStatus(func_get_args(), 'DRAFT', 'draft');
     }
 
     // ------------------------------------------------------------------------
