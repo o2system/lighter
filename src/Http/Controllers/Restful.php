@@ -403,15 +403,7 @@ class Restful extends Controller
                     $this->sendError(400, implode(', ', $get->validator->getErrors()));
                 }
 
-                $conditions = [];
-
-                foreach ($this->getValidationRules as $field => $rule) {
-                    if($get->offsetExists($field)) {
-                        $conditions[ $field ] = $get->offsetGet($field);
-                    }
-                }
-
-                if (false !== ($result = $this->model->findWhere($conditions, $limit))) {
+                if (false !== ($result = $this->model->findWhere($get->getArrayCopy(), $limit))) {
                     if ($result->count()) {
                         $this->sendPayload($result);
                     } else {
