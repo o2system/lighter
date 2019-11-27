@@ -197,4 +197,18 @@ trait RelationTrait
                 $intermediaryReferenceForeignKey)
         ))->getResult();
     }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * @param string      $referenceModel
+     * @param string|null $referenceIdColumn
+     * @param string|null $referenceModelColumn
+     */
+    protected function morphTo($referenceModel, $referenceIdColumn = null, $referenceModelColumn = null)
+    {
+        return (new Relations\ReferenceTo(
+            new Relations\Maps\Reference($this, $referenceModel, $referenceIdColumn)
+        ))->getResult();
+    }
 }

@@ -20,7 +20,6 @@ use O2System\Reactor\Models\Sql\Relations\Maps\Abstracts\AbstractMap;
 
 /**
  * Class Inverse
- *
  * @package O2System\Reactor\Models\Sql\Relations\Maps
  */
 class Inverse extends AbstractMap

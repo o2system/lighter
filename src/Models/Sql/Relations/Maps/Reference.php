@@ -19,9 +19,8 @@ use O2System\Reactor\Models\Sql\Model;
 use O2System\Reactor\Models\Sql\Relations\Maps\Abstracts\AbstractMap;
 
 /**
- * Class Mapper
- *
- * @package O2System\Reactor\Models\Sql\Relations
+ * Class Reference
+ * @package O2System\Reactor\Models\Sql\Relations\Maps
  */
 class Reference extends AbstractMap
 {

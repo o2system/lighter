@@ -20,8 +20,7 @@ use O2System\Reactor\Models\Sql\Relations\Maps\Abstracts\AbstractMap;
 
 /**
  * Class Intermediary
- *
- * @package O2System\Reactor\Models\Sql\Intermediarys\Maps
+ * @package O2System\Reactor\Models\Sql\Relations\Maps
  */
 class Intermediary extends AbstractMap
 {
@@ -116,6 +115,4 @@ class Intermediary extends AbstractMap
             $this->intermediaryModel->table = $this->referenceTable = $intermediaryModel;
         }
     }
-
-    // ------------------------------------------------------------------------
 }
