@@ -54,7 +54,7 @@ if ( ! defined('PATH_VENDOR')) {
 
 /*
  *---------------------------------------------------------------
- * FRAMEWORK PATH
+ * REACTOR PATH
  *---------------------------------------------------------------
  *
  * RealPath to framework folder.
@@ -132,16 +132,18 @@ if ( ! defined('PATH_DATABASE')) {
 
 /*
  *---------------------------------------------------------------
- * FRAMEWORK CONSTANTS
+ * REACTOR CONSTANTS
  *---------------------------------------------------------------
  */
 require __DIR__ . '/Config/Constants.php';
 
 /*
  *---------------------------------------------------------------
- * FRAMEWORK HELPERS
+ * REACTOR HELPERS
  *---------------------------------------------------------------
  */
+require __DIR__ . '/Helpers/Array.php';
+require __DIR__ . '/Helpers/Object.php';
 require __DIR__ . '/Helpers/Reactor.php';
 require __DIR__ . '/Helpers/Datetime.php';
 

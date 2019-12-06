@@ -60,7 +60,7 @@ if ( ! function_exists('globals')) {
      *
      * Convenient shortcut for O2System Framework globals container.
      *
-     * @return mixed|O2System\Reactor\Containers\Globals
+     * @return mixed|\O2System\Kernel\DataStructures\Input\Globals
      */
     function globals()
     {

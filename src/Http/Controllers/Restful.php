@@ -536,14 +536,6 @@ class Restful extends Controller
                     }
                 }
 
-                if (count($this->fillableColumns)) {
-                    foreach ($this->fillableColumns as $column) {
-                        if ($post->offsetExists($column)) {
-                            $data[ $column ] = $post->offsetGet($column);
-                        }
-                    }
-                }
-
                 if (count($data)) {
                     $data[ 'record_create_timestamp' ] = $data[ 'record_update_timestamp' ] = timestamp();
 
@@ -552,7 +544,6 @@ class Restful extends Controller
                     }
 
                     if ($this->model->insert($data)) {
-                        $data[ 'id' ] = $this->model->db->getLastInsertId();
                         $this->sendPayload([
                             'code' => 200,
                             'Successful insert request',
@@ -642,14 +633,6 @@ class Restful extends Controller
                     foreach ($this->updateValidationRules as $field => $rule) {
                         if ($post->offsetExists($field)) {
                             $data[ $field ] = $post->offsetGet($field);
-                        }
-                    }
-                }
-
-                if (count($this->fillableColumns)) {
-                    foreach ($this->fillableColumns as $column) {
-                        if ($post->offsetExists($column)) {
-                            $data[ $column ] = $post->offsetGet($column);
                         }
                     }
                 }

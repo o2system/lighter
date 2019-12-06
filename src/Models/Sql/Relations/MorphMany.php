@@ -19,31 +19,25 @@ use O2System\Database\DataObjects\Result;
 use O2System\Reactor\Models\Sql;
 
 /**
- * Class BelongsToMany
+ * Class MorphMany
  *
  * @package O2System\Reactor\Models\Sql\Relations
  */
-class BelongsToMany extends Sql\Relations\Abstracts\AbstractRelation
+class MorphMany extends Sql\Relations\Abstracts\AbstractRelation
 {
     /**
-     * BelongsToMany::getResult
+     * MorphMany::getResult
      * 
      * @return array|bool|Result
      */
     public function getResult()
     {
-        if ($this->map->objectModel->row instanceof Sql\DataObjects\Result\Row) {
-            $criteria = $this->map->objectModel->row->offsetGet($this->map->objectForeignKey);
-            $condition = [
-                $this->map->associateTable . '.' . $this->map->objectForeignKey => $criteria,
-            ];
+        $morphKey = singular($this->map->morphKey);
+        $conditions[ $this->map->associateTable . '.' . $morphKey . '_id' ] = $this->map->objectModel->row->offsetGet($this->map->objectPrimaryKey);
+        $conditions[ $this->map->associateTable . '.' . $morphKey . '_model' ] = get_class($this->map->objectModel);
 
-            $this->map->associateModel->result = null;
-            $this->map->associateModel->row = null;
-
-            if ($result = $this->map->associateModel->findWhere([$condition])) {
-                return $result;
-            }
+        if ($result = $this->map->associateModel->findWhere($conditions)) {
+            return $result;
         }
 
         return new Result([]);

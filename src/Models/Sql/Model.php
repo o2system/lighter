@@ -108,6 +108,19 @@ class Model
     public $visibleColumns = [];
 
     /**
+     * Model::$visibleRecordStatus
+     *
+     * @var array
+     */
+    public $visibleRecordStatus = [
+        'PUBLISH',
+        'UNPUBLISH',
+        'DRAFT',
+        'ARCHIVED',
+        'LOCKED'
+    ];
+
+    /**
      * Model::$appendColumns
      *
      * Database table append columns name.
@@ -133,6 +146,13 @@ class Model
      * @var array
      */
     public $primaryKeys = [];
+
+    /**
+     * Model::$metadataForeignKey
+     *
+     * @var string
+     */
+    public $metadataForeignKey;
 
     /**
      * Model::$uploadedImageFilePath

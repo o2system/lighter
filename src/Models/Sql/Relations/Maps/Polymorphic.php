@@ -17,6 +17,7 @@ namespace O2System\Reactor\Models\Sql\Relations\Maps;
 
 use O2System\Reactor\Models\Sql\Model;
 use O2System\Reactor\Models\Sql\Relations\Maps\Abstracts\AbstractMap;
+use O2System\Reactor\Models\Sql\Relations\Maps\Traits\IntermediaryTrait;
 
 /**
  * Class Polymorphic
@@ -24,35 +25,49 @@ use O2System\Reactor\Models\Sql\Relations\Maps\Abstracts\AbstractMap;
  */
 class Polymorphic extends AbstractMap
 {
+    use IntermediaryTrait;
+
     /**
      * Polymorphic::$morphKey
-     * 
+     *
      * @var string
      */
-    public $morphKey = 'reference';
+    public $morphKey;
 
     // ------------------------------------------------------------------------
-    
+
     /**
      * Polymorphic::__construct
      *
-     * @param \O2System\Reactor\Models\Sql\Model        $currentModel
-     * @param string|\O2System\Reactor\Models\Sql\Model $referenceModel
-     * @param string|null                               $foreignKey
-     * @param string|null                               $morphKey
+     * @param \O2System\Reactor\Models\Sql\Model        $objectModel
+     * @param string|\O2System\Reactor\Models\Sql\Model $associativeModel
+     * @param string                                    $morphKey
      */
     public function __construct(
-        Model $currentModel,
-        $referenceModel,
-        $foreignKey = null,
-        $morphKey = null
+        Model $objectModel,
+        $associativeModel,
+        $morphKey
     ) {
         // Mapping Models
-        $this->mappingCurrentModel($currentModel);
-        $this->mappingReferenceModel($referenceModel);
+        $this->mappingObjectModel($objectModel);
+        $this->mappingAssociateModel($associativeModel);
 
-        // Defined Current Foreign Key
-        $this->referenceForeignKey = (isset($foreignKey) ? $foreignKey
-            : 'id_' . $this->currentTable);
+        $this->morphKey = $morphKey;
+    }
+
+    // ------------------------------------------------------------------------
+
+    /**
+     * Polymorphic::setKey
+     * 
+     * @param string $key
+     *
+     * @return static
+     */
+    public function setKey(string $key)
+    {
+        $this->morphKey = $key;
+        
+        return $this;
     }
 }
