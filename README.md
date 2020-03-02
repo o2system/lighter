@@ -1,4 +1,4 @@
-[![O2System Framework](https://o2system.id/assets/img/logo/logo-200px.png?logo)](http://o2system.id)
+![alt text](https://repository-images.githubusercontent.com/166345938/2f365e80-5c9b-11ea-97af-fcf715bf7d98 "O2System Reactor Atom")
 
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/o2system/reactor/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/o2system/reactor/?branch=master)
 [![Build Status](https://scrutinizer-ci.com/g/o2system/reactor/badges/build.png?b=master)](https://scrutinizer-ci.com/g/o2system/reactor/build-status/master)
